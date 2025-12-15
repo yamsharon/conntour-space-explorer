@@ -5,7 +5,7 @@ This module provides a centralized logging setup with configurable log levels
 and destinations (console + file).
 
 Environment variables:
-- LOG_LEVEL: log level (DEBUG, INFO, WARNING, ERROR, CRITICAL). Default: DEBUG.
+- LOG_LEVEL: log level (DEBUG, INFO, WARNING, ERROR, CRITICAL). Default: INFO.
 - LOG_FILE:  path to log file. Default: logs/app.log
 """
 import logging
@@ -40,7 +40,7 @@ def setup_logger(
 
     # Determine log level
     if log_level is None:
-        log_level = os.getenv("LOG_LEVEL", "DEBUG").upper()
+        log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 
     # Convert string to logging level
     numeric_level = getattr(logging, log_level, logging.INFO)

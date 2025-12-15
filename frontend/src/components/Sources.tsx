@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ApiError, ImageSource, getImages } from '../api/client';
+import { ImageSource, getImages } from '../api/client';
 
 const Sources: React.FC = () => {
   const [images, setImages] = useState<ImageSource[]>([]);
