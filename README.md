@@ -119,3 +119,9 @@ The app is now managed in the /backend/app package with:
 - api/: routes + schemas
 - domain/: services/models
 - infra/: data sources, repositories
+
+## Environemnt Variables
+The backend supports the following environment variables if exist
+```
+LOG_LEVEL=DEBUG/INFO/WARNING/ERROR/CRITICAL
+```
