@@ -1,29 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-
-interface Source {
-  id: number;
-  name: string;
-  description: string;
-  launch_date: string;
-  image_url: string;
-  type: string;
-  status: string;
-}
+import { ApiError, ImageSource, getImages } from '../api/client';
 
 const Sources: React.FC = () => {
-  const [images, setImages] = useState<Source[]>([]);
+  const [images, setImages] = useState<ImageSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const response = await axios.get('/api/sources');
-        setImages(response.data);
-        setLoading(false);
+        const data = await getImages();
+        setImages(data);
       } catch (err) {
         setError('Failed to fetch space images');
+      } finally {
         setLoading(false);
       }
     };
