@@ -111,3 +111,11 @@ space-explorer/
 If you prefer, you are **not required** to fork or use this repository. You may build your own stack—language, framework, and tooling of your choice—so long as your solution implements the *Browse Images*, *Search*, and *Search History* features described above.
 
 Feel free to organize your codebase however you like and push it to a new repository.
+
+# Backend
+## 3 Layered Structure
+The app is now managed in the /backend/app package with:
+- main.py: FastAPI app
+- api/: routes + schemas
+- domain/: services/models
+- infra/: data sources, repositories
