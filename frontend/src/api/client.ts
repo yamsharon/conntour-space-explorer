@@ -23,32 +23,12 @@ const api: AxiosInstance = axios.create({
   },
 });
 
-function normalizeError(error: unknown): ApiError {
-  if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<any>;
-    return {
-      message:
-        axiosError.response?.data?.message ??
-        axiosError.message ??
-        "Unexpected API error",
-      status: axiosError.response?.status,
-      details: axiosError.response?.data,
-    };
-  }
-
-  if (error instanceof Error) {
-    return { message: error.message };
-  }
-
-  return { message: "Unexpected error" };
-}
-
 // Typed API functions
 export async function getImages(): Promise<ImageSource[]> {
     const response = await api.get<ImageSource[]>("/api/sources");
     return response.data;
 }
 
-export { normalizeError, api as apiClient };
+export { api as apiClient };
 
 
