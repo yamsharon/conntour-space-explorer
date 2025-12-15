@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
-@tailwind utilities; 
+@tailwind utilities;
+
+/* Prevent horizontal layout shift when switching routes by always reserving
+   space for the vertical scrollbar */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  overflow-y: scroll;
+}
