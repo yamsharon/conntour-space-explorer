@@ -1,9 +1,9 @@
 from typing import List
 
-from data.db import SpaceDB
+from app.domain.models import Source
+from app.infra.db import SpaceDB
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from models import Source
 
 app = FastAPI()
 
@@ -22,3 +22,5 @@ db = SpaceDB()
 def get_sources():
     sources = db.get_all_sources()
     return sources
+
+

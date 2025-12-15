@@ -6,7 +6,7 @@ from typing import Dict, List
 class SpaceDB:
     def __init__(self):
         # Load and parse the JSON data
-        data_path = os.path.join(os.path.dirname(__file__), "mock_data.json")
+        data_path = os.path.join(os.path.dirname(__file__), "data/mock_data.json")
         with open(data_path, "r", encoding="utf-8") as f:
             json_data = json.load(f)
         # Flatten and map the data to the expected format
