@@ -1,41 +1,32 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ImageSource, getImages } from '../api/client';
 
 const Sources: React.FC = () => {
-  const [images, setImages] = useState<ImageSource[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: images,
+    isLoading,
+    isError,
+  } = useQuery<ImageSource[], Error>({
+    queryKey: ['sources'],
+    queryFn: getImages,
+  });
 
-  useEffect(() => {
-    const fetchImages = async () => {
-      try {
-        const data = await getImages();
-        setImages(data);
-      } catch (err) {
-        setError('Failed to fetch space images');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchImages();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return <div className="flex justify-center items-center min-h-screen">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>;
   }
 
-  if (error) {
-    return <div className="text-red-500 text-center p-4">{error}</div>;
+  if (isError) {
+    return <div className="text-red-500 text-center p-4">Failed to fetch space images</div>;
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">NASA Space Images</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {images.map((image) => (
+        {images?.map((image: ImageSource) => (
           <div key={image.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
             {image.image_url && (
               <img
