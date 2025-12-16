@@ -1,12 +1,15 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ImageSource, getImages } from '../api/client';
+import { getConfidenceColor } from '../utils/styleUtils';
 
 type SourceCardProps = {
   image: ImageSource;
+  confidence?: number;
 };
 
-const SourceCard: React.FC<SourceCardProps> = ({ image }) => {
+export const SourceCard: React.FC<SourceCardProps> = ({ image, confidence }) => {
+
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
       {image.image_url && (
@@ -17,7 +20,18 @@ const SourceCard: React.FC<SourceCardProps> = ({ image }) => {
         />
       )}
       <div className="p-4">
-        <h2 className="text-xl font-semibold mb-2">{image.name}</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xl font-semibold flex-1">{image.name}</h2>
+          {confidence !== undefined && (
+            <span
+              className={`ml-2 px-2 py-1 rounded text-xs font-semibold border ${getConfidenceColor(
+                confidence
+              )}`}
+            >
+              {(confidence * 100).toFixed(0)}%
+            </span>
+          )}
+        </div>
         <p className="text-gray-600 mb-2 line-clamp-3">{image.description}</p>
         <p className="text-sm text-gray-500 mb-4">
           {image.launch_date && new Date(image.launch_date).toLocaleDateString()}
