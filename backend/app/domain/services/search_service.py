@@ -16,7 +16,7 @@ class SearchService:
         self.db = db
         self.lm = lm
 
-    def search(self, query: str, limit: int = 10) -> List[SearchResult]:
+    def search(self, query: str, limit: int = 15) -> List[SearchResult]:
         """Perform semantic search using vector embeddings."""
         if not query or not query.strip():
             return []
