@@ -87,7 +87,7 @@ class SpaceDB:
         ]
 
     def search_by_embedding(
-            self, query_embedding: np.ndarray, limit: int = 10
+            self, query_embedding: np.ndarray, limit: int = 15
     ) -> List[Tuple[Dict, float]]:
         """
         Search sources using vector similarity.

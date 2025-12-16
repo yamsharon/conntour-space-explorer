@@ -30,7 +30,7 @@ class SearchController:
     def search_sources(
         self,
         q: str = Query(..., description="Natural language search query", min_length=1),
-        limit: int = Query(10, description="Maximum number of results", ge=1, le=100),
+        limit: int = Query(15, description="Maximum number of results", ge=1, le=100),
     ) -> List[SearchResult]:
         """
         Search for NASA images using natural language queries.
