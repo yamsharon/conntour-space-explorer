@@ -17,18 +17,57 @@ export interface ImageSource {
   status: string;
 }
 
+export interface SearchResult extends ImageSource {
+  confidence: number;
+}
+
 const api: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Typed API functions
-export async function getImages(): Promise<ImageSource[]> {
-    const response = await api.get<ImageSource[]>("/api/sources");
-    return response.data;
+function normalizeError(error: unknown): ApiError {
+  if (axios.isAxiosError(error)) {
+    const axiosError = error as AxiosError<any>;
+    return {
+      message:
+        axiosError.response?.data?.message ??
+        axiosError.message ??
+        "Unexpected API error",
+      status: axiosError.response?.status,
+      details: axiosError.response?.data,
+    };
+  }
+
+  if (error instanceof Error) {
+    return { message: error.message };
+  }
+
+  return { message: "Unexpected error" };
 }
 
-export { api as apiClient };
+// Typed API functions
+export async function getImages(): Promise<ImageSource[]> {
+  try {
+    const response = await api.get<ImageSource[]>("/api/sources");
+    return response.data;
+  } catch (error) {
+    throw normalizeError(error);
+  }
+}
+
+export async function searchImages(query: string): Promise<SearchResult[]> {
+  try {
+    const response = await api.get<SearchResult[]>("/api/search", {
+      params: { q: query },
+    });
+    return response.data;
+  } catch (error) {
+    throw normalizeError(error);
+  }
+}
+
+export { normalizeError, api as apiClient };
 
 
