@@ -1,106 +1,139 @@
 """Embedding service for generating text embeddings using sentence-transformers."""
-
-from typing import List, Optional, Dict
+import os
+import pickle
+from io import BytesIO
+from typing import Optional, Dict
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
+import requests
+import torch
+from PIL import Image
+from transformers import CLIPProcessor, CLIPModel
 
-from app.infra.language_model import LanguageModel
-from app.utils import vectors_utils
+from app.utils.constants import EMBEDDING_CACHE
 from app.utils.logger import logger
 
 
-def generate_embedding(model: SentenceTransformer, text: str) -> Optional[np.ndarray]:
-    """Generate a normalized embedding vector for the given text."""
-    if not text or not text.strip():
+def get_embedding_from_image_url(model: CLIPModel, processor: CLIPProcessor, image_url: str):
+    """
+    Get an embedding from an image URL using a language model.
+
+    Args:
+        model (CLIPModel): The language model to use for generating embeddings.
+        processor (CLIPProcessor): The processor to use for generating embeddings.
+        image_url (str): The URL of the image to get an embedding from.
+    """
+    logger.debug(f"Getting embedding from image URL: {image_url}")
+    response = requests.get(image_url)
+    img = Image.open(BytesIO(response.content)).convert("RGB")
+
+    # Process image and get features
+    inputs = processor(images=img, return_tensors="pt")
+    with torch.no_grad():
+        # Extract the visual features (the vector)
+        image_features = model.get_image_features(**inputs)
+
+    # Store as a list, so it's JSON serializable later if needed
+    embedding = image_features.numpy().flatten()
+    logger.info(f"Generated embedding for image {image_url} - {embedding.shape}")
+    return embedding
+
+
+def save_embeddings_cache(embeddings: Dict[int, np.ndarray], cache_path: str):
+    """
+    Save embeddings to a cache file.
+    
+    Args:
+        embeddings: Dictionary mapping source IDs to embedding arrays
+        cache_path: Path to the cache file
+    """
+    try:
+        logger.info("Saving embedding to cache...")
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+
+        # Convert numpy arrays to list for JSON serialization, or use pickle
+        # Using pickle for better performance with numpy arrays
+        with open(cache_path, 'wb') as f:
+            pickle.dump(embeddings, f)
+
+        logger.info(f"Saved {len(embeddings)} embeddings to cache: {cache_path}")
+    except Exception as e:
+        logger.error(f"Failed to save embeddings cache: {e}")
+
+
+def load_embeddings_cache(cache_path: str) -> Optional[Dict[int, np.ndarray]]:
+    """
+    Load embeddings from a cache file.
+    
+    Args:
+        cache_path: Path to the cache file
+        
+    Returns:
+        Dictionary mapping source IDs to embedding arrays, or None if cache doesn't exist
+    """
+    logger.info("Loading embedding from cache")
+    if not os.path.exists(cache_path):
         return None
 
     try:
-        # sentence-transformers automatically normalizes embeddings
-        embedding = model.encode(
-            text.strip(),
-            convert_to_numpy=True,
-            normalize_embeddings=True,
-        )
-        return embedding.astype(np.float32)
+        with open(cache_path, 'rb') as f:
+            embeddings = pickle.load(f)
+
+        logger.info(f"Loaded {len(embeddings)} embeddings from cache: {cache_path}")
+        return embeddings
     except Exception as e:
-        logger.error(f"Error generating embedding: {e}")
+        logger.error(f"Failed to load embeddings cache: {e}")
         return None
 
 
-def generate_embeddings_batch(
-        model: SentenceTransformer, texts: List[str], batch_size: int = 32
-) -> List[Optional[np.ndarray]]:
-    """Generate embeddings for a batch of texts."""
-    if not texts:
-        return []
+def is_cache_valid(cache_path: str, data_path: str) -> bool:
+    """
+    Check if the cache is valid by comparing modification times.
+    
+    Args:
+        cache_path: Path to the cache file
+        data_path: Path to the data file
+        
+    Returns:
+        True if cache exists and is newer than data file, False otherwise
+    """
+    logger.info("Checking if the cache is valid")
+    if not os.path.exists(cache_path):
+        return False
 
-    valid_texts = [t.strip() for t in texts if t and t.strip()]
-    if not valid_texts:
-        return [None] * len(texts)
+    if not os.path.exists(data_path):
+        return False
 
     try:
-        # Generate embeddings for valid texts
-        embeddings = model.encode(
-            valid_texts,
-            convert_to_numpy=True,
-            normalize_embeddings=True,
-            batch_size=batch_size,
-            show_progress_bar=False,
-        )
-
-        # Map back to original list (handling empty texts)
-        final_results = []
-        text_idx = 0
-        for original_text in texts:
-            if original_text and original_text.strip():
-                final_results.append(embeddings[text_idx].astype(np.float32))
-                text_idx += 1
-            else:
-                final_results.append(None)
-
-        logger.info(f"Generated {len(embeddings)} embeddings")
-        return final_results
+        cache_mtime = os.path.getmtime(cache_path)
+        data_mtime = os.path.getmtime(data_path)
+        return cache_mtime >= data_mtime
     except Exception as e:
-        logger.error(f"Error generating batch embeddings: {e}")
-        return [None] * len(texts)
+        logger.error(f"Error checking cache validity: {e}")
+        return False
 
 
-def get_similarity(source: Dict, query_embedding: List):
-    # Making sure the image was processed
-    if "embedding" not in source:
-        return None
+def check_for_cached_embeddings(data_path):
+    """
+    Check for cached embeddings and return the cache path and embeddings.
 
-    source_embedding = source["embedding"]
-    source_norm = np.linalg.norm(source_embedding)
-    if source_norm == 0:
-        return None
+    Args:
+        data_path (str): The path to the data file.
+    """
+    logger.info("Checking for cached embeddings")
+    cache_path = os.path.join(os.path.dirname(__file__), EMBEDDING_CACHE)
+    cached_embeddings = None
+    if is_cache_valid(cache_path, data_path):
+        cached_embeddings = load_embeddings_cache(cache_path)
+        if cached_embeddings:
+            logger.info(f"Using cached embeddings for {len(cached_embeddings)} sources")
+    return cache_path, cached_embeddings
 
-    source_embedding = source_embedding / source_norm
-    similarity = vectors_utils.cosine_similarity(
-        query_embedding, source_embedding
-    )
 
-    return similarity
-
-
-def map_similarity_to_confidence(results):
-    sim_values = [sim for _, sim in results]
-    min_sim = min(sim_values)
-    max_sim = max(sim_values)
-    sim_range = max_sim - min_sim
-    if sim_range > 0.0001:
-        # Linear scaling: min_sim -> 0.2, max_sim -> 1.0
-        scaled_results = []
-        for source, sim in results:
-            confidence = 0.2 + 0.8 * ((sim - min_sim) / sim_range)
-            scaled_results.append((source, confidence))
-        results = scaled_results
-    else:
-        # All similarities are the same - use rank-based confidence
-        scaled_results = []
-        for idx, (source, _) in enumerate(results):
-            confidence = 1.0 - (idx * 0.05)  # Decrease by 5% per rank
-            scaled_results.append((source, max(0.1, confidence)))
-        results = scaled_results
-    return results
+def calculate_image_and_text_similarity(image_vec, text_vec):
+    image_vec = image_vec / image_vec.norm(dim=-1, keepdim=True)
+    text_vec = text_vec / text_vec.norm(dim=-1, keepdim=True)
+    # Calculate the cosine similarity score
+    score = (text_vec @ image_vec.t()).item()
+    return score
