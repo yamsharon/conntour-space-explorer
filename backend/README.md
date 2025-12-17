@@ -64,7 +64,7 @@ The backend follows a 3-layer architecture:
 ## API Endpoints
 
 - `GET /api/sources` - Get all NASA image sources
-- `GET /api/search?q=<query>&limit=<number>` - Semantic search using text-to-image matching with confidence scores
+- `GET /api/search?q=<query>&limit=<number>` - Semantic search using text-to-image matching with confidence scores. Default limit is 15
 
 ## Environment Variables
 
