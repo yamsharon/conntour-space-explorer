@@ -10,7 +10,7 @@ from app.domain.services.search_service import (
     normalize_results,
     calculate_similarity_for_one_source,
 )
-from tests.utils import DummyDB
+from tests.tests_utils import DummyDB
 
 
 @pytest.fixture

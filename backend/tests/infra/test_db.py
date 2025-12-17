@@ -1,10 +1,8 @@
-import os
-
 import pytest
 
 from app.infra.db import SpaceDB
 from app.utils.constants import EMBEDDING_KEY
-from tests.utils import DummyLM
+from tests.tests_utils import DummyLM
 
 
 @pytest.fixture
@@ -45,38 +43,36 @@ def sample_json_data(tmp_path):
 @pytest.fixture(autouse=True)
 def patch_mock_data_json(monkeypatch, sample_json_data):
     """Patch the data file path to use the temporary test file."""
-    from app.infra import db
     from app.utils import embedding_utils
-    from app.utils.constants import EMBEDDING_KEY
     import numpy as np
-    
+
     # Patch the file opening to use our test file
     original_open = open
-    
+
     def patched_open(file_path, *args, **kwargs):
         if "mock_data.json" in str(file_path):
             return original_open(sample_json_data, *args, **kwargs)
         return original_open(file_path, *args, **kwargs)
-    
+
     monkeypatch.setattr("builtins.open", patched_open)
-    
+
     # Patch check_for_cached_embeddings to return no cache for tests
     def mock_check_for_cached_embeddings(data_path):
-        return None, None
-    
+        return str(sample_json_data.parent / "embeddings_cache.pkl"), None
+
     monkeypatch.setattr(embedding_utils, "check_for_cached_embeddings", mock_check_for_cached_embeddings)
-    
+
     # Patch get_image_embedding to return dummy embeddings
     def mock_get_image_embedding(model, processor, cached_embeddings, idx, image_url):
         # Return a dummy embedding array
         return np.array([0.1 * idx, 0.2 * idx, 0.3 * idx], dtype=np.float32)
-    
+
     monkeypatch.setattr(embedding_utils, "get_image_embedding", mock_get_image_embedding)
-    
+
     # Patch save_embeddings_cache to do nothing in tests
     def mock_save_embeddings_cache(embeddings, cache_path):
         pass
-    
+
     monkeypatch.setattr(embedding_utils, "save_embeddings_cache", mock_save_embeddings_cache)
 
 
