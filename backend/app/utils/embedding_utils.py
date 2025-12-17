@@ -137,3 +137,25 @@ def calculate_image_and_text_similarity(image_vec, text_vec):
     # Calculate the cosine similarity score
     score = (text_vec @ image_vec.t()).item()
     return score
+
+
+def get_image_embedding(model, processor, cached_embeddings, idx, image_url):
+    """
+    Get the image embedding for a source.
+
+    Args:
+        model (transformers.CLIPModel): The model to use for generating embeddings.
+        processor (transformers.CLIPProcessor): The processor to use for encoding text.
+        cached_embeddings (dict): The cached embeddings.
+        idx (int): The index of the source.
+        image_url (str): The URL of the image.
+    """
+    logger.debug(f"Getting image embedding for source {idx}")
+    # Try to load embedding from cache, otherwise generate it
+    if cached_embeddings and idx in cached_embeddings:
+        embedding = cached_embeddings[idx]
+        logger.debug(f"Loaded cached embedding for source {idx}")
+    else:
+        embedding = get_embedding_from_image_url(model, processor, image_url)
+        logger.debug(f"Generated embedding for source {idx}")
+    return embedding

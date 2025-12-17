@@ -9,9 +9,8 @@ from tqdm import tqdm
 from app.infra.language_model import LanguageModel
 from app.utils.constants import MOCK_DATA_JSON, EMBEDDING_KEY
 from app.utils.embedding_utils import (
-    get_embedding_from_image_url,
     save_embeddings_cache,
-    check_for_cached_embeddings
+    check_for_cached_embeddings, get_image_embedding
 )
 from app.utils.logger import logger
 
@@ -76,7 +75,7 @@ class SpaceDB:
                 break
         name = data.get("title", f"NASA Item {idx}")
         description = data.get("description", "")
-        embedding = self.get_image_embedding(cached_embeddings, idx, image_url)
+        embedding = get_image_embedding(self.lm.model, self.lm.processor, cached_embeddings, idx, image_url)
         embeddings_to_cache[idx] = embedding
         source = {
             "id": idx,
@@ -89,25 +88,6 @@ class SpaceDB:
             EMBEDDING_KEY: embedding
         }
         return source
-
-    def get_image_embedding(self, cached_embeddings, idx, image_url):
-        """
-        Get the image embedding for a source.
-
-        Args:
-            cached_embeddings (dict): The cached embeddings.
-            idx (int): The index of the source.
-            image_url (str): The URL of the image.
-        """
-        logger.debug(f"Getting image embedding for source {idx}")
-        # Try to load embedding from cache, otherwise generate it
-        if cached_embeddings and idx in cached_embeddings:
-            embedding = cached_embeddings[idx]
-            logger.debug(f"Loaded cached embedding for source {idx}")
-        else:
-            embedding = get_embedding_from_image_url(self.lm.model, self.lm.processor, image_url)
-            logger.debug(f"Generated embedding for source {idx}")
-        return embedding
 
     def get_all_sources(self) -> List[Dict]:
         """Get all sources without embeddings."""
