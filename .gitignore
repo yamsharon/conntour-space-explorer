@@ -26,6 +26,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+*.pkl
 
 # Node
 node_modules/
