@@ -48,8 +48,16 @@ def normalize_results(results: List[SearchResult]):
 
 
 def calculate_similarity_for_one_source(source_dict, text_vec):
-    logger.debug(f"Calculating similarity for source: {source_dict.name}")
+    """
+    Calculate similarity between an image and a text vector.
 
+    Args:
+        source_dict (dict): The source dictionary.
+        text_vec (torch.Tensor): The text vector.
+
+    Returns:
+        SearchResult: The search result.
+    """
     # Calculate Similarity between an image and a text vector
     image_vec = torch.tensor(source_dict[EMBEDDING_KEY])
     score = calculate_image_and_text_similarity(image_vec, text_vec)
@@ -96,11 +104,11 @@ class SearchService:
         # Encode the search text
         inputs = self.lm.processor(text=[query], return_tensors="pt", padding=True)
         with torch.no_grad():
-            text_features = self.lm.model.get_text_features(**inputs)
+            text_features: torch.Tensor = self.lm.model.get_text_features(**inputs)
 
         results = []
         # Convert text features to a Torch tensor for comparison
-        text_vec = torch.tensor(text_features)
+        text_vec = text_features.clone().detach()
 
         all_sources: List[Dict] = self.db.get_all_sources_with_embedding()
 
@@ -108,7 +116,6 @@ class SearchService:
         for source_dict in all_sources:
             if source_dict[EMBEDDING_KEY] is None:
                 continue
-            logger.debug(f"Calculating similarity for source: {source_dict.name}")
             search_result = calculate_similarity_for_one_source(source_dict, text_vec)
             results.append(search_result)
 
