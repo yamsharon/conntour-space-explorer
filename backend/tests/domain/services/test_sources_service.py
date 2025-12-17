@@ -1,7 +1,8 @@
 import pytest
-from app.domain.services.sources_service import SourcesService
+
 from app.domain.models import Source
-from tests.utils import DummyDB
+from app.domain.services.sources_service import SourcesService
+from tests.tests_utils import DummyDB
 
 
 @pytest.fixture
@@ -23,6 +24,7 @@ def test_sources_service_returns_empty_list_when_no_sources():
     class EmptyDB:
         def get_all_sources(self):
             return []
+
     svc = SourcesService(db=EmptyDB())
     result = svc.get_all_sources()
     assert isinstance(result, list)
