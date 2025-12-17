@@ -24,7 +24,11 @@ class SearchController:
         self.router = APIRouter(prefix="/api", tags=["search"])
         self.router.get("/search", response_model=List[SearchResult])(self.search_sources)
 
-    def search_sources(self, q: str = Query(..., description="Natural language search query", min_length=1), limit: int = Query(15, description="Maximum number of results", ge=1, le=100)) -> List[SearchResult]:
+    def search_sources(
+        self,
+        q: str = Query("", description="Natural language search query"),
+        limit: int = Query(15, description="Maximum number of results", ge=1, le=100),
+    ) -> List[SearchResult]:
         """
         Search for NASA images using natural language queries.
         Return results with confidence scores between 0.2 and 1.0.
@@ -36,6 +40,11 @@ class SearchController:
         Returns:
             List of SearchResult objects with confidence scores between 0.2 and 1.0
         """
+        # Handle empty query - return empty list early
+        if not q or not q.strip():
+            logger.info("Empty search query provided, returning empty results")
+            return []
+
         logger.info(f"Searching for: '{q}' with limit of {limit} results")
         results = self.search_service.search(query=q, limit=limit)
         logger.info(f"Found {len(results)} results")
