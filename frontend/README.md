@@ -56,10 +56,15 @@ frontend/
 ### API Client Layer (`src/api/client.ts`)
 
 Centralized API client that provides:
-- Typed interfaces for API responses (`ImageSource`, `SearchResult`)
+- Typed interfaces for API responses (`ImageSource`, `SearchResult`, `HistoryItem`, `HistoryResponse`)
 - Normalized error handling
 - Axios instance configuration
 - API functions: `getImages()`, `searchImages()`
+- History API functions (currently mocked with localStorage, will be replaced with backend calls):
+  - `getHistory(startIndex, limit)` - Fetch paginated search history (returns `HistoryResponse` with `items` and `total`)
+  - `saveToHistory(query, results)` - Save a search to history
+  - `deleteHistoryItem(id)` - Delete a specific history item
+  - `clearHistory()` - Clear all history
 
 ### Component Architecture
 
@@ -81,12 +86,25 @@ Centralized API client that provides:
 - Results displayed with confidence scores (color-coded: green >75%, orange 50-75%, red <50%)
 - Loading spinners and error messages
 - Empty state handling
+- Automatic history saving when results are loaded
+- URL query parameter support (`/search?q=query`)
+
+### History Page
+- Server-side pagination (10 items per page)
+- Fetches only the current page's data from the API
+- Each history item shows:
+  - Search query and timestamp
+  - Top 3 result thumbnails with rounded corners (positioned on the right)
+  - Delete button for individual items (far right)
+- Clicking a history item navigates to search page with that query
+- Pagination controls (Previous/Next buttons)
+- Loading and error states
+- Empty state when no history exists
 
 ### Global Navigation
 - Sticky header with title and navigation bar
 - Active route highlighting
 - Smooth navigation between pages
-
 ## Configuration
 
 ### API Proxy

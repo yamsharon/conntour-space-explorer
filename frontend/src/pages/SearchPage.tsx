@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { SearchResult, searchImages } from '../api/client';
+import { useSearchParams } from 'react-router-dom';
+import { SearchResult, searchImages, saveToHistory } from '../api/client';
 import { SourceCard } from '../components/Sources';
 
 type SearchBarProps = {
@@ -175,8 +176,19 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results }) => {
  * Uses React Query for data fetching with 30 second stale time for caching.
  */
 const SearchPage: React.FC = () => {
-  const [query, setQuery] = useState('');
-  const [submittedQuery, setSubmittedQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlQuery = searchParams.get('q') || '';
+  
+  const [query, setQuery] = useState(urlQuery);
+  const [submittedQuery, setSubmittedQuery] = useState(urlQuery);
+
+  // Update query from URL params
+  useEffect(() => {
+    if (urlQuery && urlQuery !== query) {
+      setQuery(urlQuery);
+      setSubmittedQuery(urlQuery);
+    }
+  }, [urlQuery]);
 
   // Restore query input when returning to page with previous search
   useEffect(() => {
@@ -199,6 +211,15 @@ const SearchPage: React.FC = () => {
     retry: 2,
   });
 
+  // Save to history when results are loaded
+  useEffect(() => {
+    if (results && results.length > 0 && submittedQuery) {
+      saveToHistory(submittedQuery, results).catch((error) => {
+        console.error('Failed to save search history:', error);
+      });
+    }
+  }, [results, submittedQuery]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = query.trim();
@@ -206,6 +227,7 @@ const SearchPage: React.FC = () => {
       return;
     }
     setSubmittedQuery(trimmed);
+    setSearchParams({ q: trimmed });
     refetch();
   };
 
