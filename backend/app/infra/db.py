@@ -2,12 +2,17 @@
 
 import json
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
-import numpy as np
+from tqdm import tqdm
 
 from app.infra.language_model import LanguageModel
-from app.utils.embedding_utils import generate_embeddings_batch, get_similarity, map_similarity_to_confidence
+from app.utils.constants import MOCK_DATA_JSON, EMBEDDING_KEY
+from app.utils.embedding_utils import (
+    get_embedding_from_image_url,
+    save_embeddings_cache,
+    check_for_cached_embeddings
+)
 from app.utils.logger import logger
 
 
@@ -15,106 +20,104 @@ class SpaceDB:
     """In-memory database for NASA space images with vector embeddings."""
 
     def __init__(self, lm: LanguageModel):
+        """Initialize the SpaceDB."""
         logger.info("Initializing SpaceDB")
         self.lm = lm
 
         # Load data
-        data_path = os.path.join(os.path.dirname(__file__), "data/mock_data.json")
+        data_path = os.path.join(os.path.dirname(__file__), MOCK_DATA_JSON)
         with open(data_path, "r", encoding="utf-8") as f:
             json_data = json.load(f)
 
         # Parse sources
         self._sources = []
         items = json_data.get("collection", {}).get("items", [])
-        texts_for_embedding = []
 
-        for idx, item in enumerate(items, start=1):
-            data = item.get("data", [{}])[0]
-            links = item.get("links", [])
+        cache_path, cached_embeddings = check_for_cached_embeddings(data_path)
 
-            # Find image URL
-            image_url = None
-            for link in links:
-                if link.get("render") == "image":
-                    image_url = link.get("href")
-                    break
+        # Prepare embeddings dict for saving
+        embeddings_to_cache = {}
 
-            name = data.get("title", f"NASA Item {idx}")
-            description = data.get("description", "")
-            keywords = data.get("keywords", [])
-
-            source = {
-                "id": idx,
-                "name": name,
-                "type": data.get("media_type", "unknown"),
-                "launch_date": data.get("date_created", ""),
-                "description": description,
-                "image_url": image_url,
-                "status": "Active",
-            }
+        logger.info(f"Processing {len(items)} sources")
+        for idx, item in enumerate(tqdm(items, desc="Processing sources"), start=1):
+            source = self.process_one_source(cached_embeddings, embeddings_to_cache, idx, item)
             self._sources.append(source)
 
-            # Use only keywords for embedding (or fallback to name if no keywords)
-            if keywords:
-                text_for_embedding = ", ".join(keywords).strip()
-            else:
-                # Fallback to name if no keywords available
-                text_for_embedding = name.strip() if name else ""
-
-            texts_for_embedding.append(text_for_embedding)
-
-        # Generate embeddings
-        logger.info(f"Generating embeddings for {len(texts_for_embedding)} sources...")
-        embeddings = generate_embeddings_batch(self.lm.model, texts_for_embedding)
-
-        # Store embeddings
-        for idx, embedding in enumerate(embeddings):
-            if embedding is not None:
-                self._sources[idx]["embedding"] = embedding
-            else:
-                logger.warning(f"Failed to generate embedding for source {idx + 1}")
+        # Save embeddings to cache if we generated any new ones
+        if not cached_embeddings or len(embeddings_to_cache) != len(cached_embeddings):
+            save_embeddings_cache(embeddings_to_cache, cache_path)
 
         logger.info(
             f"SpaceDB initialized: {len(self._sources)} sources, "
             f"{sum(1 for s in self._sources if 'embedding' in s)} with embeddings"
         )
 
+    def process_one_source(self, cached_embeddings, embeddings_to_cache, idx, item):
+        """
+        Process one source and return a dictionary with the source data with the embedding.
+
+        Args:
+            cached_embeddings (dict): The cached embeddings.
+            embeddings_to_cache (dict): The embeddings to cache.
+            idx (int): The index of the source.
+            item (dict): The source item.
+
+        Returns:
+            dict: The source data with the embedding.
+        """
+        logger.debug(f"Processing source {idx}")
+        data = item.get("data", [{}])[0]
+        links = item.get("links", [])
+        # Find image URL
+        image_url = None
+        for link in links:
+            if link.get("render") == "image":
+                image_url = link.get("href")
+                break
+        name = data.get("title", f"NASA Item {idx}")
+        description = data.get("description", "")
+        embedding = self.get_image_embedding(cached_embeddings, idx, image_url)
+        embeddings_to_cache[idx] = embedding
+        source = {
+            "id": idx,
+            "name": name,
+            "type": data.get("media_type", "unknown"),
+            "launch_date": data.get("date_created", ""),
+            "description": description,
+            "image_url": image_url,
+            "status": "Active",
+            EMBEDDING_KEY: embedding
+        }
+        return source
+
+    def get_image_embedding(self, cached_embeddings, idx, image_url):
+        """
+        Get the image embedding for a source.
+
+        Args:
+            cached_embeddings (dict): The cached embeddings.
+            idx (int): The index of the source.
+            image_url (str): The URL of the image.
+        """
+        logger.debug(f"Getting image embedding for source {idx}")
+        # Try to load embedding from cache, otherwise generate it
+        if cached_embeddings and idx in cached_embeddings:
+            embedding = cached_embeddings[idx]
+            logger.debug(f"Loaded cached embedding for source {idx}")
+        else:
+            embedding = get_embedding_from_image_url(self.lm.model, self.lm.processor, image_url)
+            logger.debug(f"Generated embedding for source {idx}")
+        return embedding
+
     def get_all_sources(self) -> List[Dict]:
         """Get all sources without embeddings."""
+        logger.info("Getting all sources without embeddings")
         return [
-            {k: v for k, v in source.items() if k != "embedding"}
+            {k: v for k, v in source.items() if k != EMBEDDING_KEY}
             for source in self._sources
         ]
 
-    def search_by_embedding(
-            self, query_embedding: np.ndarray, limit: int = 15
-    ) -> List[Tuple[Dict, float]]:
-        """
-        Search sources using vector similarity.
-        
-        Returns list of (source_dict, confidence_score) tuples sorted by confidence descending.
-        """
-        # Normalize query embedding
-        query_norm = np.linalg.norm(query_embedding)
-        if query_norm == 0:
-            logger.error("Query embedding has zero norm")
-            return []
-        query_embedding = query_embedding / query_norm
-
-        # Calculate similarities
-        results = []
-        for source in self._sources:
-            similarity = get_similarity(source, query_embedding)
-
-            # Only include results with meaningful similarity
-            if similarity > 0.0:
-                results.append((source, float(similarity)))
-
-        # Sort by similarity descending
-        results.sort(key=lambda x: x[1], reverse=True)
-
-        # Apply confidence scaling: map similarity [min, max] to confidence [0.2, 1.0]
-        if results:
-            results = map_similarity_to_confidence(results)
-
-        return results[:limit]
+    def get_all_sources_with_embedding(self) -> List[Dict]:
+        """Get all sources with embeddings."""
+        logger.info("Getting all sources with embeddings")
+        return self._sources
