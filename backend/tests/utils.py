@@ -48,3 +48,9 @@ class DummyDB:
         """Get all sources with embeddings (for SearchService tests)."""
         return self.sources
 
+
+class DummyLM:
+    """A dummy language model for testing."""
+    def __init__(self):
+        self.model = "dummy_model"
+        self.processor = "dummy_processor"
