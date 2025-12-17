@@ -3,41 +3,19 @@ from unittest.mock import MagicMock
 import pytest
 import torch
 
-from app.domain.models import SearchResult, Source
+from app.domain.models import SearchResult
 from app.domain.services import search_service
 from app.domain.services.search_service import (
     SearchService,
     normalize_results,
     calculate_similarity_for_one_source,
 )
+from tests.utils import DummyDB
 
 
 @pytest.fixture
 def mock_db():
-    mock_db = MagicMock()
-    mock_db.get_all_sources_with_embedding.return_value = [
-        {
-            "id": "1",
-            "name": "Apollo 11",
-            "type": "Mission",
-            "launch_date": "1969-07-16",
-            "description": "First Moon landing.",
-            "image_url": "https://example.com/apollo11.jpg",
-            "status": "Complete",
-            "embedding": [0.2, 0.5, 0.7]
-        },
-        {
-            "id": "2",
-            "name": "Voyager 1",
-            "type": "Probe",
-            "launch_date": "1977-09-05",
-            "description": "Farthest spacecraft from Earth.",
-            "image_url": "https://example.com/voyager1.jpg",
-            "status": "Active",
-            "embedding": [0.9, 0.3, 0.4]
-        }
-    ]
-    return mock_db
+    return DummyDB(include_embeddings=True)
 
 
 @pytest.fixture
