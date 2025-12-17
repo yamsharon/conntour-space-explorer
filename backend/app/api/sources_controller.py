@@ -21,10 +21,6 @@ class SourcesController:
         """
         self.sources_service = sources_service
         self.router = APIRouter(prefix="/api", tags=["sources"])
-        self._register_routes()
-
-    def _register_routes(self):
-        """Register all routes for this controller."""
         self.router.get("/sources", response_model=List[Source])(self.get_sources)
 
     def get_sources(self) -> List[Source]:
@@ -32,7 +28,7 @@ class SourcesController:
         Retrieve all NASA image sources.
 
         Returns:
-            List of all available sources without search filtering
+            List of all available sources
         """
         logger.info("Getting all sources")
         sources = self.sources_service.get_all_sources()
