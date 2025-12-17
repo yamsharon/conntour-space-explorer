@@ -14,11 +14,13 @@ import sys
 from logging.handlers import RotatingFileHandler
 from typing import Optional
 
+from app.utils.constants import DEFAULT_LOG_PATH
+
 
 def setup_logger(
-    name: str = "conntour-space-explorer",
-    log_level: Optional[str] = None,
-    log_format: Optional[str] = None,
+        name: str = "conntour-space-explorer",
+        log_level: Optional[str] = None,
+        log_format: Optional[str] = None,
 ) -> logging.Logger:
     """
     Set up and configure a logger for the application.
@@ -32,11 +34,11 @@ def setup_logger(
     Returns:
         Configured logger instance.
     """
-    logger = logging.getLogger(name)
+    new_logger = logging.getLogger(name)
 
     # Avoid adding handlers multiple times if logger already configured
-    if logger.handlers:
-        return logger
+    if new_logger.handlers:
+        return new_logger
 
     # Determine log level
     if log_level is None:
@@ -44,26 +46,35 @@ def setup_logger(
 
     # Convert string to logging level
     numeric_level = getattr(logging, log_level, logging.INFO)
-    logger.setLevel(numeric_level)
+    new_logger.setLevel(numeric_level)
 
     # Set log format
     if log_format is None:
-        log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        log_format = "%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s"
 
     formatter = logging.Formatter(log_format)
 
-    # Console handler
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(numeric_level)
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
+    console_handler = setup_console_handler(formatter, numeric_level)
+    new_logger.addHandler(console_handler)
 
-    # File handler (rotating)
-    log_file = os.getenv("LOG_FILE", "logs/app.log")
+    file_handler = setup_file_handler(formatter, numeric_level)
+    new_logger.addHandler(file_handler)
+
+    return new_logger
+
+
+def setup_file_handler(formatter, numeric_level):
+    """
+    Setup a file handler for the logger.
+
+    Args:
+        formatter (logging.Formatter): The formatter to use for the file handler.
+        numeric_level (int): The numeric log level to use for the file handler.
+    """
+    log_file = os.getenv("LOG_FILE", DEFAULT_LOG_PATH)
     log_dir = os.path.dirname(log_file)
     if log_dir and not os.path.exists(log_dir):
         os.makedirs(log_dir, exist_ok=True)
-
     file_handler = RotatingFileHandler(
         log_file,
         maxBytes=5 * 1024 * 1024,  # 5 MB
@@ -72,11 +83,20 @@ def setup_logger(
     )
     file_handler.setLevel(numeric_level)
     file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+    return file_handler
 
-    return logger
+def setup_console_handler(formatter, numeric_level):
+    """
+    Setup a console handler for the logger.
 
+    Args:
+        formatter (logging.Formatter): The formatter to use for the console handler.
+        numeric_level (int): The numeric log level to use for the console handler.
+    """
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(numeric_level)
+    console_handler.setFormatter(formatter)
+    return console_handler
 
 # Create a default logger instance for easy import
 logger = setup_logger()
-
