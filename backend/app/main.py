@@ -48,7 +48,7 @@ async def startup_event():
 
 
 # Initialize controllers (dependencies are injected via FastAPI's Depends)
-sources_controller = SourcesController(sources_service=None)  # Service injected via Depends
+sources_controller = SourcesController()
 app.include_router(sources_controller.router)
 search_controller = SearchController()
 app.include_router(search_controller.router)

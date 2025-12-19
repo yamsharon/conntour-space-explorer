@@ -12,10 +12,9 @@ from app.utils.logger import logger
 class HistoryController:
     """Controller for managing history endpoints."""
 
-    def __init__(self, history_service: HistoryService = Depends(get_history_service)):
+    def __init__(self):
         """Initialize the HistoryController."""
         logger.info("Initializing HistoryController")
-        self.history_service = history_service
         self.router = APIRouter(prefix="/api", tags=["history"])
 
         # Register routes
@@ -26,6 +25,7 @@ class HistoryController:
         self,
         startIndex: int = Query(0, description="Starting index for pagination", ge=0),
         limit: int = Query(10, description="Number of items per page", ge=1, le=100),
+        history_service: HistoryService = Depends(get_history_service)
     ) -> HistoryResponse:
         """
         Get paginated search history.
@@ -33,30 +33,33 @@ class HistoryController:
         Args:
             startIndex: Starting index for pagination (default: 0)
             limit: Maximum number of items to return (default: 10, max: 100)
+            history_service: Injected history service
 
         Returns:
             HistoryResponse containing paginated items and total count
         """
         logger.info(f"Getting history: startIndex={startIndex}, limit={limit}")
-        response = self.history_service.get_history(start_index=startIndex, limit=limit)
+        response = history_service.get_history(start_index=startIndex, limit=limit)
         logger.info(f"Returning {len(response.items)} items (total: {response.total})")
         return response
 
     def delete_history_item(
         self,
         history_id: str,
+        history_service: HistoryService = Depends(get_history_service)
     ) -> Response:
         """
         Delete a specific history item by ID.
 
         Args:
             history_id: UUID of the history item to delete
+            history_service: Injected history service
 
         Returns:
             204 No Content if successful, 404 if not found
         """
         logger.info(f"Deleting history item: {history_id}")
-        deleted = self.history_service.delete_history_item(history_id)
+        deleted = history_service.delete_history_item(history_id)
 
         if not deleted:
             raise HTTPException(

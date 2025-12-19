@@ -43,7 +43,7 @@ class HistoryService:
         logger.info(f"Added new search result history for query: '{query}'")
 
     def get_history(self, start_index: int = 0, limit: int = 10) -> HistoryResponse:
-        """Get paginated search history.
+        """Get paginated search history, sorted by most recent first.
 
         Args:
             start_index: Starting index for pagination.
@@ -56,8 +56,15 @@ class HistoryService:
         all_history = self.db.get_all_search_results_history()
         total = len(all_history)
 
+        # Sort by time_searched in descending order (most recent first)
+        sorted_history = sorted(
+            all_history,
+            key=lambda x: x.time_searched,
+            reverse=True
+        )
+
         # Apply pagination
-        items = all_history[start_index:start_index + limit]
+        items = sorted_history[start_index:start_index + limit]
 
         logger.info(f"Returning {len(items)} history items (total: {total})")
         return HistoryResponse(items=items, total=total)
