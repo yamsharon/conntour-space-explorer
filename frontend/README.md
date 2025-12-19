@@ -59,18 +59,12 @@ Centralized API client that provides:
 - Typed interfaces for API responses (`ImageSource`, `SearchResult`, `HistoryItem`, `HistoryResponse`)
 - Normalized error handling
 - Axios instance configuration
-- API functions: `getImages()`, `searchImages()`
-- History API functions (currently mocked with localStorage, will be replaced with backend calls):
-  - `getHistory(startIndex, limit)` - Fetch paginated search history (returns `HistoryResponse` with `items` and `total`)
-  - `saveToHistory(query, results)` - Save a search to history
-  - `deleteHistoryItem(id)` - Delete a specific history item
-  - `clearHistory()` - Clear all history
 
 ### Component Architecture
 
 - **Layout Component**: Provides global header, navigation, and sticky positioning
 - **Page Components**: Route-specific components (Browse, Search, History)
-- **Reusable Components**: `SourceCard` for displaying image cards with confidence badges
+- **Reusable Components**: Components for app-wide use
 
 
 ## Key Features
@@ -105,7 +99,6 @@ Centralized API client that provides:
 - Sticky header with title and navigation bar
 - Active route highlighting
 - Smooth navigation between pages
-## Configuration
 
 ### API Proxy
 
