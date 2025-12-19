@@ -80,8 +80,10 @@ Centralized API client that provides:
 - Results displayed with confidence scores (color-coded: green >75%, orange 50-75%, red <50%)
 - Loading spinners and error messages
 - Empty state handling
-- Automatic history saving when results are loaded
-- URL query parameter support (`/search?q=query`)
+- Automatic history saving when results are loaded (unless `skipHistory=true` is in URL)
+- URL query parameter support:
+  - `/search?q=query` - Standard search (saves to history)
+  - `/search?q=query&skipHistory=true` - Search without saving to history (used when navigating from history page)
 
 ### History Page
 - Server-side pagination (10 items per page)
@@ -90,7 +92,8 @@ Centralized API client that provides:
   - Search query and timestamp
   - Top 3 result thumbnails with rounded corners (positioned on the right)
   - Delete button for individual items (far right)
-- Clicking a history item navigates to search page with that query
+- Clicking a history item navigates to search page with that query and `skipHistory=true` parameter
+  - This prevents creating duplicate history entries when viewing past searches
 - Pagination controls (Previous/Next buttons)
 - Loading and error states
 - Empty state when no history exists
