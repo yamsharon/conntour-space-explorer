@@ -23,7 +23,8 @@ class SearchController:
     def search_sources(
             q: str = Query("", description="Natural language search query"),
             limit: int = Query(15, description="Maximum number of results", ge=1, le=100),
-            skipHistory: bool = Query(False, description="Skip saving to history (e.g., when navigating from history page)"),
+            skipHistory: bool = Query(False,
+                                      description="Skip saving to history (e.g., when navigating from history page)"),
             search_service: SearchService = Depends(get_search_service)
     ) -> List[SearchResult]:
         """

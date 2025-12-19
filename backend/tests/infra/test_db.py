@@ -3,6 +3,7 @@ import pytest
 from app.domain.models import SearchResultHistory
 from app.infra.db import SpaceDB
 from app.utils.constants import EMBEDDING_KEY
+from tests import tests_utils
 from tests.tests_utils import DummyLM
 
 
@@ -115,9 +116,7 @@ def test_db_get_all_search_results_history():
 def test_db_add_search_result_history():
     db = SpaceDB(lm=DummyLM())
     search_result_history = SearchResultHistory(query="test", time_searched="2020-01-01T00:00:00Z",
-                                                top_three_images_urls=["http://example.com/img1.jpg",
-                                                                       "http://example.com/img2.jpg",
-                                                                       "http://example.com/img3.jpg"])
+                                                top_three_images=tests_utils.generate_search_results(3))
     db.add_search_result_history(search_result_history)
     search_results_history = db.get_all_search_results_history()
     assert isinstance(search_results_history, list)

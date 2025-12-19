@@ -1,5 +1,7 @@
 """Test utilities for the Conntour Space Explorer backend tests."""
-from app.domain.models import SearchResultHistory
+from typing import List
+
+from app.domain.models import SearchResultHistory, SearchResult
 from app.utils.constants import EMBEDDING_KEY
 
 
@@ -78,6 +80,14 @@ class DummyDB:
 
 class DummyLM:
     """A dummy language model for testing."""
+
     def __init__(self):
         self.model = "dummy_model"
         self.processor = "dummy_processor"
+
+
+def generate_search_results(count=1) -> List[SearchResult]:
+    return [SearchResult(id=idx, name=f"image-{idx}", type="image", launch_date="2018-06-25T00:00:00Z",
+                         description=f"image-{idx}", image_url="http://image.url", status="Active", confidence=0.6) for
+            idx in
+            range(1, count + 1)]
