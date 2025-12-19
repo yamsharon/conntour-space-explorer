@@ -1,10 +1,10 @@
 """Search service for semantic image search using embeddings."""
-
+from datetime import datetime, timezone
 from typing import List, Dict
 
 import torch
 
-from app.domain.models import SearchResult, Source
+from app.domain.models import SearchResult, Source, SearchResultHistory
 from app.infra.db import SpaceDB
 from app.infra.language_model import LanguageModel
 from app.utils.constants import EMBEDDING_KEY
@@ -96,7 +96,8 @@ class SearchService:
             List[SearchResult]: List of SearchResult objects with normalized confidence values.
         """
         logger.info(f"Searching for: '{query}' with limit of {limit} results")
-        
+
+
         # Check if the query is valid
         if not query or not query.strip():
             return []
@@ -124,4 +125,30 @@ class SearchService:
         # Sort by similarity descending
         normalized_results.sort(key=lambda x: x.confidence, reverse=True)
         logger.info(f"Found {len(normalized_results)} results")
+
+        self._add_search_result_history(query, normalized_results)
+
         return normalized_results[:limit]
+
+    def _add_search_result_history(self, query: str, final_results: List[SearchResult]) -> None:
+        """
+        Add a new search result history to the database.
+
+        Args:
+            query (str): The query to search for.
+            final_results (List[SearchResult]): The final results.
+
+        Returns:
+            None
+        """
+        logger.info(f"Adding new search result history for query: '{query}'")
+        logger.debug(f"Final results: {final_results}")
+        top_three_results = final_results[:3]
+        current_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        new_search_rsult_history: SearchResultHistory = SearchResultHistory(
+            query=query,
+            time_searched=current_time,
+            top_three_images_urls=[result.image_url for result in top_three_results]
+        )
+        self.db.add_search_result_history(new_search_rsult_history)
+        logger.info(f"Added new search result history for query: '{query}'")

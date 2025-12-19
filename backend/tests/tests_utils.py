@@ -1,4 +1,6 @@
 """Test utilities for the Conntour Space Explorer backend tests."""
+from app.domain.models import SearchResultHistory
+from app.utils.constants import EMBEDDING_KEY
 
 
 class DummyDB:
@@ -32,21 +34,31 @@ class DummyDB:
             },
         ]
 
+        self.search_results_history = []
+
         if include_embeddings:
             # Add embeddings for search service tests
-            self.sources[0]["embedding"] = [0.2, 0.5, 0.7]
-            self.sources[1]["embedding"] = [0.9, 0.3, 0.4]
+            self.sources[0][EMBEDDING_KEY] = [0.2, 0.5, 0.7]
+            self.sources[1][EMBEDDING_KEY] = [0.9, 0.3, 0.4]
 
     def get_all_sources(self):
         """Get all sources without embeddings (for SourcesService tests)."""
         return [
-            {k: v for k, v in source.items() if k != "embedding"}
+            {k: v for k, v in source.items() if k != EMBEDDING_KEY}
             for source in self.sources
         ]
 
     def get_all_sources_with_embedding(self):
         """Get all sources with embeddings (for SearchService tests)."""
         return self.sources
+
+    def get_all_search_results_history(self):
+        """Get all search results history (for SearchService tests)."""
+        return self.search_results_history
+
+    def add_search_result_history(self, search_result_history: SearchResultHistory):
+        """Add a new search result history (for SearchService tests)."""
+        self.search_results_history.append(search_result_history)
 
 
 class DummyLM:

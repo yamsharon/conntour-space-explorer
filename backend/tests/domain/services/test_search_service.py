@@ -108,3 +108,13 @@ def test_search_service_search_empty_query_returns_empty_list(mock_db, mock_lm):
     svc = SearchService(db=mock_db, lm=mock_lm)
     results = svc.search("   ")
     assert results == []
+
+
+def test_search_service_search_adds_search_result_history(mock_db, mock_lm, monkeypatch):
+    svc = SearchService(db=mock_db, lm=mock_lm)
+    results = svc.search("moon mission", limit=2)
+    assert len(mock_db.get_all_search_results_history()) == 1
+    assert mock_db.get_all_search_results_history()[0].query == "moon mission"
+    assert len(mock_db.get_all_search_results_history()[0].top_three_images_urls) == 2
+    assert mock_db.get_all_search_results_history()[0].top_three_images_urls[0] in ["http://image.com/apollo11.jpg", "http://image.com/voyager1.jpg"]
+    assert mock_db.get_all_search_results_history()[0].top_three_images_urls[1] in ["http://image.com/apollo11.jpg", "http://image.com/voyager1.jpg"]
