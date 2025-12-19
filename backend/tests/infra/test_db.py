@@ -1,5 +1,6 @@
 import pytest
 
+from app.domain.models import SearchResultHistory
 from app.infra.db import SpaceDB
 from app.utils.constants import EMBEDDING_KEY
 from tests.tests_utils import DummyLM
@@ -102,3 +103,24 @@ def test_db_source_fields():
     sources = db.get_all_sources()
     for source in sources:
         assert {"id", "name", "type", "launch_date", "description", "image_url", "status"}.issubset(source.keys())
+
+
+def test_db_get_all_search_results_history():
+    db = SpaceDB(lm=DummyLM())
+    search_results_history = db.get_all_search_results_history()
+    assert isinstance(search_results_history, list)
+    assert len(search_results_history) == 0
+
+
+def test_db_add_search_result_history():
+    db = SpaceDB(lm=DummyLM())
+    search_result_history = SearchResultHistory(query="test", time_searched="2020-01-01T00:00:00Z",
+                                                top_three_images_urls=["http://example.com/img1.jpg",
+                                                                       "http://example.com/img2.jpg",
+                                                                       "http://example.com/img3.jpg"])
+    db.add_search_result_history(search_result_history)
+    search_results_history = db.get_all_search_results_history()
+    assert isinstance(search_results_history, list)
+    assert len(search_results_history) == 1
+    # Verify that id was auto-generated
+    assert search_result_history.id is not None

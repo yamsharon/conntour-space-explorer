@@ -6,6 +6,7 @@ from typing import Dict, List
 
 from tqdm import tqdm
 
+from app.domain.models import SearchResultHistory
 from app.infra.language_model import LanguageModel
 from app.utils.constants import MOCK_DATA_JSON, EMBEDDING_KEY
 from app.utils.embedding_utils import (
@@ -21,7 +22,8 @@ class SpaceDB:
     def __init__(self, lm: LanguageModel):
         """Initialize the SpaceDB."""
         logger.info("Initializing SpaceDB")
-        self.lm = lm
+        self._lm: LanguageModel = lm
+        self._search_results_history: List[SearchResultHistory] = []
 
         # Load data
         data_path = os.path.join(os.path.dirname(__file__), MOCK_DATA_JSON)
@@ -75,7 +77,7 @@ class SpaceDB:
                 break
         name = data.get("title", f"NASA Item {idx}")
         description = data.get("description", "")
-        embedding = get_image_embedding(self.lm.model, self.lm.processor, cached_embeddings, idx, image_url)
+        embedding = get_image_embedding(self._lm.model, self._lm.processor, cached_embeddings, idx, image_url)
         embeddings_to_cache[idx] = embedding
         source = {
             "id": idx,
@@ -101,3 +103,13 @@ class SpaceDB:
         """Get all sources with embeddings."""
         logger.info("Getting all sources with embeddings")
         return self._sources
+
+    def get_all_search_results_history(self):
+        """Get all search history results."""
+        logger.info("Getting all search history results")
+        return self._search_results_history
+
+    def add_search_result_history(self, search_result_history: SearchResultHistory):
+        """Append a new search result history."""
+        logger.info("Appending a new search result history")
+        self._search_results_history.append(search_result_history)

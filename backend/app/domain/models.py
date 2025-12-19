@@ -1,6 +1,7 @@
-from typing import Optional
+import uuid
+from typing import Optional, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Source(BaseModel):
@@ -19,3 +20,9 @@ class SearchResult(Source):
     confidence: float
 
 
+class SearchResultHistory(BaseModel):
+    """Model representing a search history result."""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    query: str
+    time_searched: str
+    top_three_images_urls: List[str]
