@@ -113,3 +113,24 @@ class SpaceDB:
         """Append a new search result history."""
         logger.info("Appending a new search result history")
         self._search_results_history.append(search_result_history)
+
+    def delete_search_result_history(self, history_id: str) -> bool:
+        """Delete a search result history by ID.
+        
+        Args:
+            history_id: The ID of the history item to delete.
+            
+        Returns:
+            True if the item was found and deleted, False otherwise.
+        """
+        logger.info(f"Deleting search result history with ID: {history_id}")
+        initial_length = len(self._search_results_history)
+        self._search_results_history = [
+            item for item in self._search_results_history if item.id != history_id
+        ]
+        deleted = len(self._search_results_history) < initial_length
+        if deleted:
+            logger.info(f"Successfully deleted history item with ID: {history_id}")
+        else:
+            logger.warning(f"History item with ID {history_id} not found")
+        return deleted
