@@ -1,10 +1,10 @@
 """Search service for semantic image search using embeddings."""
-from datetime import datetime, timezone
 from typing import List, Dict
 
 import torch
 
-from app.domain.models import SearchResult, Source, SearchResultHistory
+from app.domain.models import SearchResult, Source
+from app.domain.services.history_service import HistoryService
 from app.infra.db import SpaceDB
 from app.infra.language_model import LanguageModel
 from app.utils.constants import EMBEDDING_KEY
@@ -32,13 +32,14 @@ def normalize_results(results: List[SearchResult]):
     min_confidence = min(confidence_values)
     max_confidence = max(confidence_values)
     confidence_range = max_confidence - min_confidence
-    logger.debug(f"Confidence range: {confidence_range}, min_confidence: {min_confidence}, max_confidence: {max_confidence}")
+    logger.debug(
+        f"Confidence range: {confidence_range}, min_confidence: {min_confidence}, max_confidence: {max_confidence}")
 
     scaled_results = []
     for result in results:
         if confidence_range == 0:  # If the confidence range is 0, we return a default confidence of 0.6
             result.confidence = 0.6
-        else:   # If the confidence range is not 0, we scale the confidence 
+        else:  # If the confidence range is not 0, we scale the confidence
             logger.debug(f"Scaling confidence for result: {result.name}")
             norm_confidence = result.confidence
             logger.debug(f"Normalized confidence: {norm_confidence}")
@@ -79,11 +80,12 @@ def calculate_similarity_for_one_source(source_dict, text_vec):
 class SearchService:
     """Service for performing semantic search over NASA images."""
 
-    def __init__(self, db: SpaceDB, lm: LanguageModel):
+    def __init__(self, db: SpaceDB, lm: LanguageModel, history_service: HistoryService):
         """Initialize the SearchService."""
         logger.info("Initializing SearchService")
         self.db = db
         self.lm = lm
+        self.history_service = history_service
 
     def search(self, query: str, limit: int = 15) -> List[SearchResult]:
         """Perform semantic search using vector embeddings.
@@ -96,7 +98,6 @@ class SearchService:
             List[SearchResult]: List of SearchResult objects with normalized confidence values.
         """
         logger.info(f"Searching for: '{query}' with limit of {limit} results")
-
 
         # Check if the query is valid
         if not query or not query.strip():
@@ -126,29 +127,6 @@ class SearchService:
         normalized_results.sort(key=lambda x: x.confidence, reverse=True)
         logger.info(f"Found {len(normalized_results)} results")
 
-        self._add_search_result_history(query, normalized_results)
+        self.history_service.add_search_result_history(query, normalized_results)
 
         return normalized_results[:limit]
-
-    def _add_search_result_history(self, query: str, final_results: List[SearchResult]) -> None:
-        """
-        Add a new search result history to the database.
-
-        Args:
-            query (str): The query to search for.
-            final_results (List[SearchResult]): The final results.
-
-        Returns:
-            None
-        """
-        logger.info(f"Adding new search result history for query: '{query}'")
-        logger.debug(f"Final results: {final_results}")
-        top_three_results = final_results[:3]
-        current_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        new_search_rsult_history: SearchResultHistory = SearchResultHistory(
-            query=query,
-            time_searched=current_time,
-            top_three_images_urls=[result.image_url for result in top_three_results]
-        )
-        self.db.add_search_result_history(new_search_rsult_history)
-        logger.info(f"Added new search result history for query: '{query}'")

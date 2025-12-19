@@ -60,6 +60,21 @@ class DummyDB:
         """Add a new search result history (for SearchService tests)."""
         self.search_results_history.append(search_result_history)
 
+    def delete_search_result_history(self, history_id: str) -> bool:
+        """Delete a search result history by ID (for HistoryService tests).
+        
+        Args:
+            history_id: The ID of the history item to delete.
+            
+        Returns:
+            True if the item was found and deleted, False otherwise.
+        """
+        initial_length = len(self.search_results_history)
+        self.search_results_history = [
+            item for item in self.search_results_history if item.id != history_id
+        ]
+        return len(self.search_results_history) < initial_length
+
 
 class DummyLM:
     """A dummy language model for testing."""

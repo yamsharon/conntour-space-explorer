@@ -5,6 +5,7 @@ import torch
 
 from app.domain.models import SearchResult
 from app.domain.services import search_service
+from app.domain.services.history_service import HistoryService
 from app.domain.services.search_service import (
     SearchService,
     normalize_results,
@@ -111,8 +112,9 @@ def test_search_service_search_empty_query_returns_empty_list(mock_db, mock_lm):
 
 
 def test_search_service_search_adds_search_result_history(mock_db, mock_lm, monkeypatch):
-    svc = SearchService(db=mock_db, lm=mock_lm)
-    results = svc.search("moon mission", limit=2)
+    hs = HistoryService(db=mock_db)
+    svc = SearchService(db=mock_db, lm=mock_lm, history_service=hs)
+    svc.search("moon mission", limit=2)
     assert len(mock_db.get_all_search_results_history()) == 1
     assert mock_db.get_all_search_results_history()[0].query == "moon mission"
     assert len(mock_db.get_all_search_results_history()[0].top_three_images_urls) == 2

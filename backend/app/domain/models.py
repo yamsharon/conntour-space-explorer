@@ -21,8 +21,14 @@ class SearchResult(Source):
 
 
 class SearchResultHistory(BaseModel):
-    """Model representing a search history result."""
+    """Model representing a search history result (internal storage)."""
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     query: str
     time_searched: str
     top_three_images_urls: List[str]
+
+
+class HistoryResponse(BaseModel):
+    """API model representing paginated history response."""
+    items: List[SearchResultHistory]
+    total: int
