@@ -19,9 +19,9 @@ class SourcesController:
         self.router = APIRouter(prefix="/api", tags=["sources"])
         self.router.get("/sources", response_model=List[Source])(self.get_sources)
 
+    @staticmethod
     def get_sources(
-        self,
-        sources_service: SourcesService = Depends(get_sources_service)
+            sources_service: SourcesService = Depends(get_sources_service)
     ) -> List[Source]:
         """
         Retrieve all NASA image sources.
@@ -36,4 +36,3 @@ class SourcesController:
         sources = sources_service.get_all_sources()
         logger.info(f"Found {len(sources)} sources")
         return sources
-

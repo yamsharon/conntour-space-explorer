@@ -21,11 +21,11 @@ class HistoryController:
         self.router.get("/history", response_model=HistoryResponse)(self.get_history)
         self.router.delete("/history/{history_id}")(self.delete_history_item)
 
+    @staticmethod
     def get_history(
-        self,
-        startIndex: int = Query(0, description="Starting index for pagination", ge=0),
-        limit: int = Query(10, description="Number of items per page", ge=1, le=100),
-        history_service: HistoryService = Depends(get_history_service)
+            startIndex: int = Query(0, description="Starting index for pagination", ge=0),
+            limit: int = Query(10, description="Number of items per page", ge=1, le=100),
+            history_service: HistoryService = Depends(get_history_service)
     ) -> HistoryResponse:
         """
         Get paginated search history.
@@ -43,10 +43,10 @@ class HistoryController:
         logger.info(f"Returning {len(response.items)} items (total: {response.total})")
         return response
 
+    @staticmethod
     def delete_history_item(
-        self,
-        history_id: str,
-        history_service: HistoryService = Depends(get_history_service)
+            history_id: str,
+            history_service: HistoryService = Depends(get_history_service)
     ) -> Response:
         """
         Delete a specific history item by ID.

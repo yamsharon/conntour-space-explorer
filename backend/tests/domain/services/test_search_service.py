@@ -94,7 +94,8 @@ def test_search_service_search_returns_normalized_results_sorted(mock_db, mock_l
 
     monkeypatch.setattr(search_service, 'calculate_image_and_text_similarity', fake_similarity)
 
-    svc = SearchService(db=mock_db, lm=mock_lm)
+    hs = HistoryService(db=mock_db)
+    svc = SearchService(db=mock_db, lm=mock_lm, history_service=hs)
     results = svc.search("moon mission", limit=2)
     assert isinstance(results, list)
     assert len(results) == 2
@@ -106,7 +107,8 @@ def test_search_service_search_returns_normalized_results_sorted(mock_db, mock_l
 
 
 def test_search_service_search_empty_query_returns_empty_list(mock_db, mock_lm):
-    svc = SearchService(db=mock_db, lm=mock_lm)
+    hs = HistoryService(db=mock_db)
+    svc = SearchService(db=mock_db, lm=mock_lm, history_service=hs)
     results = svc.search("   ")
     assert results == []
 
@@ -117,6 +119,8 @@ def test_search_service_search_adds_search_result_history(mock_db, mock_lm, monk
     svc.search("moon mission", limit=2)
     assert len(mock_db.get_all_search_results_history()) == 1
     assert mock_db.get_all_search_results_history()[0].query == "moon mission"
-    assert len(mock_db.get_all_search_results_history()[0].top_three_images_urls) == 2
-    assert mock_db.get_all_search_results_history()[0].top_three_images_urls[0] in ["http://image.com/apollo11.jpg", "http://image.com/voyager1.jpg"]
-    assert mock_db.get_all_search_results_history()[0].top_three_images_urls[1] in ["http://image.com/apollo11.jpg", "http://image.com/voyager1.jpg"]
+    assert len(mock_db.get_all_search_results_history()[0].top_three_images) == 2
+    assert mock_db.get_all_search_results_history()[0].top_three_images[0].image_url in [
+        "http://image.com/apollo11.jpg", "http://image.com/voyager1.jpg"]
+    assert mock_db.get_all_search_results_history()[0].top_three_images[1].image_url in [
+        "http://image.com/apollo11.jpg", "http://image.com/voyager1.jpg"]

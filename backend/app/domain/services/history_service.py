@@ -37,7 +37,7 @@ class HistoryService:
         new_search_rsult_history: SearchResultHistory = SearchResultHistory(
             query=query,
             time_searched=current_time,
-            top_three_images_urls=[result.image_url for result in top_three_results]
+            top_three_images=top_three_results
         )
         self.db.add_search_result_history(new_search_rsult_history)
         logger.info(f"Added new search result history for query: '{query}'")

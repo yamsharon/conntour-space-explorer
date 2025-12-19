@@ -4,6 +4,7 @@ import pytest
 
 from app.domain.models import HistoryResponse, SearchResult, SearchResultHistory
 from app.domain.services.history_service import HistoryService
+from tests import tests_utils
 from tests.tests_utils import DummyDB
 
 
@@ -40,10 +41,10 @@ def test_add_search_result_history_stores_only_top_three(history_service, mock_d
 
     history = mock_db.get_all_search_results_history()
     assert len(history) == 1
-    assert len(history[0].top_three_images_urls) == 3
-    assert history[0].top_three_images_urls[0] == "http://image.com/item1.jpg"
-    assert history[0].top_three_images_urls[1] == "http://image.com/item2.jpg"
-    assert history[0].top_three_images_urls[2] == "http://image.com/item3.jpg"
+    assert len(history[0].top_three_images) == 3
+    assert history[0].top_three_images[0].image_url == "http://image.com/item1.jpg"
+    assert history[0].top_three_images[1].image_url == "http://image.com/item2.jpg"
+    assert history[0].top_three_images[2].image_url == "http://image.com/item3.jpg"
 
 
 def test_get_history_returns_paginated_results(history_service, mock_db):
@@ -53,7 +54,7 @@ def test_get_history_returns_paginated_results(history_service, mock_db):
         history_item = SearchResultHistory(
             query=f"query {i}",
             time_searched="2020-01-01T00:00:00Z",
-            top_three_images_urls=[f"http://image.com/img{i}.jpg"]
+            top_three_images=tests_utils.generate_search_results(1)
         )
         mock_db.add_search_result_history(history_item)
 
@@ -92,7 +93,7 @@ def test_get_history_handles_start_index_beyond_total(history_service, mock_db):
         history_item = SearchResultHistory(
             query=f"query {i}",
             time_searched="2020-01-01T00:00:00Z",
-            top_three_images_urls=[f"http://image.com/img{i}.jpg"]
+            top_three_images=tests_utils.generate_search_results(1)
         )
         mock_db.add_search_result_history(history_item)
 
@@ -110,7 +111,7 @@ def test_delete_history_item_removes_item_by_id(history_service, mock_db):
         history_item = SearchResultHistory(
             query=f"query {i}",
             time_searched="2020-01-01T00:00:00Z",
-            top_three_images_urls=[f"http://image.com/img{i}.jpg"]
+            top_three_images=tests_utils.generate_search_results(1)
         )
         mock_db.add_search_result_history(history_item)
         history_items.append(history_item)
@@ -131,7 +132,7 @@ def test_delete_history_item_returns_false_when_not_found(history_service, mock_
     history_item = SearchResultHistory(
         query="test query",
         time_searched="2020-01-01T00:00:00Z",
-        top_three_images_urls=["http://image.com/img.jpg"]
+        top_three_images=tests_utils.generate_search_results(1)
     )
     mock_db.add_search_result_history(history_item)
 
