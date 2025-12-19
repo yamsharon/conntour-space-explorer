@@ -2,8 +2,9 @@
 
 from typing import List
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
+from app.api.dependencies import get_search_service
 from app.domain.models import SearchResult
 from app.domain.services.search_service import SearchService
 from app.utils.logger import logger
@@ -12,13 +13,8 @@ from app.utils.logger import logger
 class SearchController:
     """Controller for managing search endpoints."""
 
-    def __init__(self, search_service: SearchService):
-        """
-        Initialize the SearchController.
-
-        Args:
-            search_service: Service for performing semantic search over NASA images
-        """
+    def __init__(self, search_service: SearchService = Depends(get_search_service)):
+        """Initialize the SearchController."""
         logger.info("Initializing SearchController")
         self.search_service = search_service
         self.router = APIRouter(prefix="/api", tags=["search"])
@@ -27,7 +23,7 @@ class SearchController:
     def search_sources(
         self,
         q: str = Query("", description="Natural language search query"),
-        limit: int = Query(15, description="Maximum number of results", ge=1, le=100),
+        limit: int = Query(15, description="Maximum number of results", ge=1, le=100)
     ) -> List[SearchResult]:
         """
         Search for NASA images using natural language queries.

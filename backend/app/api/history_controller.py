@@ -1,8 +1,9 @@
 """Controller for handling history-related API endpoints."""
 
-from fastapi import APIRouter, Query, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import Response
 
+from app.api.dependencies import get_history_service
 from app.domain.models import HistoryResponse
 from app.domain.services.history_service import HistoryService
 from app.utils.logger import logger
@@ -11,13 +12,8 @@ from app.utils.logger import logger
 class HistoryController:
     """Controller for managing history endpoints."""
 
-    def __init__(self, history_service: HistoryService):
-        """
-        Initialize the HistoryController.
-
-        Args:
-            history_service: Service for managing search history
-        """
+    def __init__(self, history_service: HistoryService = Depends(get_history_service)):
+        """Initialize the HistoryController."""
         logger.info("Initializing HistoryController")
         self.history_service = history_service
         self.router = APIRouter(prefix="/api", tags=["history"])
@@ -27,9 +23,9 @@ class HistoryController:
         self.router.delete("/history/{history_id}")(self.delete_history_item)
 
     def get_history(
-            self,
-            startIndex: int = Query(0, description="Starting index for pagination", ge=0),
-            limit: int = Query(10, description="Number of items per page", ge=1, le=100),
+        self,
+        startIndex: int = Query(0, description="Starting index for pagination", ge=0),
+        limit: int = Query(10, description="Number of items per page", ge=1, le=100),
     ) -> HistoryResponse:
         """
         Get paginated search history.
@@ -46,7 +42,10 @@ class HistoryController:
         logger.info(f"Returning {len(response.items)} items (total: {response.total})")
         return response
 
-    def delete_history_item(self, history_id: str) -> Response:
+    def delete_history_item(
+        self,
+        history_id: str,
+    ) -> Response:
         """
         Delete a specific history item by ID.
 

@@ -1,13 +1,9 @@
 """Main FastAPI application."""
 
+from app.api.dependencies import get_db, get_language_model, get_sources_service
 from app.api.history_controller import HistoryController
 from app.api.search_controller import SearchController
 from app.api.sources_controller import SourcesController
-from app.domain.services.history_service import HistoryService
-from app.domain.services.search_service import SearchService
-from app.domain.services.sources_service import SourcesService
-from app.infra.db import SpaceDB
-from app.infra.language_model import LanguageModel
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.utils.logger import logger
@@ -32,23 +28,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize Infra
-lm = LanguageModel()
-db = SpaceDB(lm)
-logger.info("All infra initialized")
 
-# Initialize services
-sources_service = SourcesService(db=db)
-history_service = HistoryService(db=db)
-search_service = SearchService(db=db, lm=lm, history_service=history_service)
-logger.info("All services initialized")
+@app.on_event("startup")
+async def startup_event():
+    """Initialize infrastructure components on app startup."""
+    logger.info("Initializing infrastructure components...")
+    
+    # Initialize language model (will be cached by @lru_cache)
+    logger.info("Initializing language model...")
+    get_language_model()
+    logger.info("Language model initialized")
+    
+    # Initialize database (will be cached by @lru_cache)
+    logger.info("Initializing database...")
+    get_db()
+    logger.info("Database initialized")
+    
+    logger.info("All infrastructure components initialized")
 
-# Initialize controllers
-sources_controller = SourcesController(sources_service=sources_service)
+
+# Initialize controllers (dependencies are injected via FastAPI's Depends)
+sources_controller = SourcesController(sources_service=None)  # Service injected via Depends
 app.include_router(sources_controller.router)
-search_controller = SearchController(search_service=search_service)
+search_controller = SearchController()
 app.include_router(search_controller.router)
-history_controller = HistoryController(history_service=history_service)
+history_controller = HistoryController()
 app.include_router(history_controller.router)
 logger.info("All controllers initialized")
 
