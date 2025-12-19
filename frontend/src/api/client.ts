@@ -57,10 +57,10 @@ export async function getImages(): Promise<ImageSource[]> {
   }
 }
 
-export async function searchImages(query: string): Promise<SearchResult[]> {
+export async function searchImages(query: string, skipHistory: boolean = false): Promise<SearchResult[]> {
   try {
     const response = await api.get<SearchResult[]>("/api/search", {
-      params: { q: query },
+      params: { q: query, skipHistory },
     });
     return response.data;
   } catch (error) {
@@ -68,94 +68,40 @@ export async function searchImages(query: string): Promise<SearchResult[]> {
   }
 }
 
-// History API (mocked for now - will be replaced with real backend calls)
-export interface HistoryItem {
+// History API - Backend models
+export interface SearchResultHistory {
   id: string;
   query: string;
-  results: SearchResult[];
-  timestamp: number;
+  time_searched: string;
+  top_three_images: SearchResult[];
 }
 
 export interface HistoryResponse {
-  items: HistoryItem[];
+  items: SearchResultHistory[];
   total: number;
-}
-
-// Mock implementation using localStorage - simulates async backend calls
-const HISTORY_KEY = 'nasa_search_history';
-const MAX_HISTORY_ITEMS = 100;
-
-async function delay(ms: number = 100): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export async function getHistory(
   startIndex: number = 0,
   limit: number = 10
-): Promise<HistoryResponse> {
-  // Simulate network delay
-  await delay(50);
+): Promise<{ items: SearchResultHistory[]; total: number }> {
   try {
-    const stored = localStorage.getItem(HISTORY_KEY);
-    if (!stored) {
-      return { items: [], total: 0 };
-    }
-    const allHistory: HistoryItem[] = JSON.parse(stored);
-    const total = allHistory.length;
-    
-    // Apply pagination
-    const paginatedItems = allHistory.slice(startIndex, startIndex + limit);
+    const response = await api.get<HistoryResponse>("/api/history", {
+      params: { startIndex, limit },
+    });
     
     return {
-      items: paginatedItems,
-      total,
+      items: response.data.items,
+      total: response.data.total,
     };
-  } catch (error) {
-    throw normalizeError(error);
-  }
-}
-
-export async function saveToHistory(query: string, results: SearchResult[]): Promise<void> {
-  // Simulate network delay
-  await delay(100);
-  try {
-    const historyResponse = await getHistory(0, MAX_HISTORY_ITEMS);
-    const history = historyResponse.items;
-    
-    const newItem: HistoryItem = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      query: query.trim(),
-      results: results.slice(0, 10),
-      timestamp: Date.now(),
-    };
-    
-    history.unshift(newItem);
-    const trimmedHistory = history.slice(0, MAX_HISTORY_ITEMS);
-    
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmedHistory));
   } catch (error) {
     throw normalizeError(error);
   }
 }
 
 export async function deleteHistoryItem(id: string): Promise<void> {
-  // Simulate network delay
-  await delay(100);
   try {
-    const historyResponse = await getHistory(0, MAX_HISTORY_ITEMS);
-    const history = historyResponse.items;
-    const filtered = history.filter(item => item.id !== id);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(filtered));
-  } catch (error) {
-    throw normalizeError(error);
-  }
-}
-
-export async function clearHistory(): Promise<void> {
-  // Simulate network delay
-  await delay(100);
-  try {
-    localStorage.removeItem(HISTORY_KEY);
+    await api.delete(`/api/history/${id}`);
   } catch (error) {
     throw normalizeError(error);
   }

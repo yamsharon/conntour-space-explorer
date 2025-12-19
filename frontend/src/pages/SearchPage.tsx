@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { SearchResult, searchImages, saveToHistory } from '../api/client';
+import { SearchResult, searchImages } from '../api/client';
 import { SourceCard } from '../components/Sources';
 
 type SearchBarProps = {
@@ -178,47 +178,48 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results }) => {
 const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlQuery = searchParams.get('q') || '';
+  const skipHistory = searchParams.get('skipHistory') === 'true';
   
   const [query, setQuery] = useState(urlQuery);
   const [submittedQuery, setSubmittedQuery] = useState(urlQuery);
+  const prevUrlQueryRef = useRef(urlQuery);
+  const prevSubmittedQueryRef = useRef(submittedQuery);
 
-  // Update query from URL params
+  // Update query from URL params when URL changes
   useEffect(() => {
-    if (urlQuery && urlQuery !== query) {
-      setQuery(urlQuery);
-      setSubmittedQuery(urlQuery);
+    // Only update if urlQuery actually changed (not just on every render)
+    if (urlQuery !== prevUrlQueryRef.current) {
+      prevUrlQueryRef.current = urlQuery;
+      if (urlQuery) {
+        setQuery(urlQuery);
+        setSubmittedQuery(urlQuery);
+      }
     }
   }, [urlQuery]);
 
   // Restore query input when returning to page with previous search
   useEffect(() => {
-    if (submittedQuery && !query) {
-      setQuery(submittedQuery);
+    // Only restore if submittedQuery changed and query is empty - avoids infinite loop
+    if (submittedQuery !== prevSubmittedQueryRef.current) {
+      prevSubmittedQueryRef.current = submittedQuery;
+      if (submittedQuery && !query) {
+        setQuery(submittedQuery);
+      }
     }
-  }, [submittedQuery]);
+  }, [submittedQuery, query]);
 
   const {
     data: results,
     isLoading,
     isError,
     error,
-    refetch,
   } = useQuery<SearchResult[], Error>({
-    queryKey: ['search', submittedQuery],
-    queryFn: () => searchImages(submittedQuery),
+    queryKey: ['search', submittedQuery, skipHistory],
+    queryFn: () => searchImages(submittedQuery, skipHistory),
     enabled: submittedQuery.trim().length > 0,
     staleTime: 30_000,
     retry: 2,
   });
-
-  // Save to history when results are loaded
-  useEffect(() => {
-    if (results && results.length > 0 && submittedQuery) {
-      saveToHistory(submittedQuery, results).catch((error) => {
-        console.error('Failed to save search history:', error);
-      });
-    }
-  }, [results, submittedQuery]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,7 +229,6 @@ const SearchPage: React.FC = () => {
     }
     setSubmittedQuery(trimmed);
     setSearchParams({ q: trimmed });
-    refetch();
   };
 
   return (
