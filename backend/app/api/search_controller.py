@@ -13,17 +13,18 @@ from app.utils.logger import logger
 class SearchController:
     """Controller for managing search endpoints."""
 
-    def __init__(self, search_service: SearchService = Depends(get_search_service)):
+    def __init__(self):
         """Initialize the SearchController."""
         logger.info("Initializing SearchController")
-        self.search_service = search_service
         self.router = APIRouter(prefix="/api", tags=["search"])
         self.router.get("/search", response_model=List[SearchResult])(self.search_sources)
 
+    @staticmethod
     def search_sources(
-        self,
-        q: str = Query("", description="Natural language search query"),
-        limit: int = Query(15, description="Maximum number of results", ge=1, le=100)
+            q: str = Query("", description="Natural language search query"),
+            limit: int = Query(15, description="Maximum number of results", ge=1, le=100),
+            skipHistory: bool = Query(False, description="Skip saving to history (e.g., when navigating from history page)"),
+            search_service: SearchService = Depends(get_search_service)
     ) -> List[SearchResult]:
         """
         Search for NASA images using natural language queries.
@@ -32,6 +33,8 @@ class SearchController:
         Args:
             q: Natural language search query (e.g., "images of Mars rovers", "solar flares")
             limit: Maximum number of results to return (1-100)
+            skipHistory: If True, don't save this search to history
+            search_service: Injected search service
 
         Returns:
             List of SearchResult objects with confidence scores between 0.2 and 1.0
@@ -41,7 +44,7 @@ class SearchController:
             logger.info("Empty search query provided, returning empty results")
             return []
 
-        logger.info(f"Searching for: '{q}' with limit of {limit} results")
-        results = self.search_service.search(query=q, limit=limit)
+        logger.info(f"Searching for: '{q}' with limit of {limit} results (skipHistory={skipHistory})")
+        results = search_service.search(query=q, limit=limit, save_to_history=not skipHistory)
         logger.info(f"Found {len(results)} results")
         return results

@@ -58,13 +58,27 @@ backend/
 The backend follows a 3-layer architecture:
 
 - **API Layer** (`api/`): Controllers handle HTTP requests/responses
+  - `sources_controller.py`: Handles `/api/sources` endpoint
+  - `search_controller.py`: Handles `/api/search` endpoint
+  - `history_controller.py`: Handles `/api/history` endpoints
 - **Domain Layer** (`domain/`): Business logic and models
+  - `services/`: Business logic services (SourcesService, SearchService, HistoryService)
+  - `models.py`: Pydantic models for API responses
 - **Infrastructure Layer** (`infra/`): Data access and external services
+  - `db.py`: Database access and embedding storage
+  - `language_model.py`: CLIP model wrapper for embeddings
 
 ## API Endpoints
 
 - `GET /api/sources` - Get all NASA image sources
-- `GET /api/search?q=<query>&limit=<number>` - Semantic search using text-to-image matching with confidence scores. Default limit is 15
+- `GET /api/search?q=<query>&limit=<number>&skipHistory=<boolean>` - Semantic search using text-to-image matching with confidence scores. 
+  - `q`: Natural language search query (required)
+  - `limit`: Maximum number of results (default: 15, range: 1-100)
+  - `skipHistory`: If `true`, don't save this search to history (default: `false`). Useful when navigating from history page to prevent duplicate entries.
+- `GET /api/history?startIndex=<number>&limit=<number>` - Get paginated search history
+  - `startIndex`: Starting index for pagination (default: 0)
+  - `limit`: Number of items to return (default: 10)
+- `DELETE /api/history/<history_id>` - Delete a specific history item by ID
 
 ## Environment Variables
 
@@ -92,11 +106,23 @@ Image embeddings are cached to `app/infra/data/embeddings_cache.pkl` to speed up
 - Used on subsequent runs (much faster startup)
 - Invalidated if the data file (`mock_data.json`) is modified
 
+## Dependency Injection
+
+The backend uses FastAPI's dependency injection system for managing service lifecycles:
+
+- Infrastructure components (`LanguageModel`, `SpaceDB`) are initialized on app startup
+- Services are injected into controllers using `Depends()` and `@lru_cache()` decorators
+- This ensures singleton behavior and improves testability
+
+See `app/api/dependencies.py` for dependency definitions.
+
 ## Notes
 
-- The CLIP model is loaded once on startup
+- The CLIP model is loaded once on startup (eager initialization)
 - Image embeddings are generated from image URLs using CLIP's vision encoder
 - Text queries are encoded using CLIP's text encoder
 - Search uses cosine similarity between normalized text and image embeddings
 - Confidence scores are normalized to [0.2, 1.0] range for better UX
+- Search history is automatically saved unless `skipHistory=true` is specified
+- History items are sorted by most recent first
 

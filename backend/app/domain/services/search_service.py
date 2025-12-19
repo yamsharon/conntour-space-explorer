@@ -87,12 +87,13 @@ class SearchService:
         self.lm = lm
         self.history_service = history_service
 
-    def search(self, query: str, limit: int = 15) -> List[SearchResult]:
+    def search(self, query: str, limit: int = 15, save_to_history: bool = True) -> List[SearchResult]:
         """Perform semantic search using vector embeddings.
 
         Args:
             query (str): The query to search for.
             limit (int): The maximum number of results to return.
+            save_to_history (bool): Whether to save this search to history. Defaults to True.
 
         Returns:
             List[SearchResult]: List of SearchResult objects with normalized confidence values.
@@ -127,6 +128,8 @@ class SearchService:
         normalized_results.sort(key=lambda x: x.confidence, reverse=True)
         logger.info(f"Found {len(normalized_results)} results")
 
-        self.history_service.add_search_result_history(query, normalized_results)
+        # Only save to history if requested
+        if save_to_history:
+            self.history_service.add_search_result_history(query, normalized_results)
 
         return normalized_results[:limit]
