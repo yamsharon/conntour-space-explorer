@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getHistory, deleteHistoryItem, HistoryItem, SearchResult } from '../api/client';
+import { getHistory, deleteHistoryItem, SearchResultHistory } from '../api/client';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -9,7 +9,7 @@ const ITEMS_PER_PAGE = 10;
  * Props for HistoryRow component.
  */
 type HistoryRowProps = {
-  item: HistoryItem;
+  item: SearchResultHistory;
   onDelete: (id: string) => void;
   onClick: (query: string) => void;
 };
@@ -25,8 +25,8 @@ type HistoryRowProps = {
  * @param onClick - Callback when row is clicked
  */
 const HistoryRow: React.FC<HistoryRowProps> = ({ item, onDelete, onClick }) => {
-  const topThree = item.results.slice(0, 3);
-  const formattedDate = new Date(item.timestamp).toLocaleString();
+  const topThree = item.top_three_images.slice(0, 3);
+  const formattedDate = new Date(item.time_searched).toLocaleString();
 
   const handleClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking the delete button
@@ -54,7 +54,7 @@ const HistoryRow: React.FC<HistoryRowProps> = ({ item, onDelete, onClick }) => {
         
         {topThree.length > 0 && (
           <div className="flex gap-2 items-center">
-            {topThree.map((result: SearchResult) => (
+            {topThree.map((result) => (
               <div key={result.id} className="flex-shrink-0">
                 {result.image_url ? (
                   <img
@@ -69,10 +69,10 @@ const HistoryRow: React.FC<HistoryRowProps> = ({ item, onDelete, onClick }) => {
                 )}
               </div>
             ))}
-            {item.results.length > 3 && (
+            {item.top_three_images.length > 3 && (
               <div className="flex-shrink-0 w-14 h-14 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
                 <span className="text-xs text-gray-600 font-medium">
-                  +{item.results.length - 3}
+                  +{item.top_three_images.length - 3}
                 </span>
               </div>
             )}
@@ -169,7 +169,7 @@ const HistoryPage: React.FC = () => {
     data: historyResponse,
     isLoading,
     isError,
-  } = useQuery<{ items: HistoryItem[]; total: number }>({
+  } = useQuery<{ items: SearchResultHistory[], total: number }>({
     queryKey: ['history', currentPage],
     queryFn: () => {
       const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -190,7 +190,6 @@ const HistoryPage: React.FC = () => {
 
   // Calculate pagination
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-  const currentHistory = history;
 
   // Reset to page 1 if current page is out of bounds
   useEffect(() => {
@@ -200,7 +199,7 @@ const HistoryPage: React.FC = () => {
   }, [currentPage, totalPages]);
 
   const handleItemClick = (query: string) => {
-    navigate(`/search?q=${encodeURIComponent(query)}`);
+    navigate(`/search?q=${encodeURIComponent(query)}&skipHistory=true`);
   };
 
   const handleDelete = (id: string) => {
@@ -245,7 +244,7 @@ const HistoryPage: React.FC = () => {
       </div>
 
       <div>
-        {currentHistory.map((item) => (
+        {history.map((item) => (
           <HistoryRow
             key={item.id}
             item={item}
