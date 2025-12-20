@@ -104,6 +104,26 @@ class SpaceDB:
         logger.info("Getting all sources with embeddings")
         return self._sources
 
+    def get_sources_by_ids(self, source_ids: List[int]) -> Dict[int, Dict]:
+        """Get sources by their IDs (without embeddings).
+        
+        Args:
+            source_ids: List of source IDs to retrieve.
+            
+        Returns:
+            Dictionary mapping source ID to source dict (without embeddings).
+        """
+        logger.info(f"Getting sources by IDs")
+        sources_dict = {}
+        for source in self._sources:
+            source_id = source.get("id")
+            if source_id in source_ids:
+                # Return source without embedding
+                source_clean = {k: v for k, v in source.items() if k != EMBEDDING_KEY}
+                sources_dict[source_id] = source_clean
+        logger.info(f"Found {len(sources_dict)} sources out of {len(source_ids)} requested")
+        return sources_dict
+
     def get_all_search_results_history(self):
         """Get all search history results."""
         logger.info("Getting all search history results")
