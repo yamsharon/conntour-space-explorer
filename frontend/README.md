@@ -56,7 +56,13 @@ frontend/
 ### API Client Layer (`src/api/client.ts`)
 
 Centralized API client that provides:
-- Typed interfaces for API responses (`ImageSource`, `SearchResult`, `HistoryItem`, `HistoryResponse`)
+- Typed interfaces for API responses (`ImageSource`, `SearchResult`, `SearchResultHistoryResponse`, `HistoryResponse`)
+- API functions:
+  - `getImages()` - Fetch all NASA image sources
+  - `searchImages(query, skipHistory)` - Perform semantic search
+  - `getHistory(startIndex, limit)` - Get paginated search history
+  - `getHistoryResults(historyId)` - Get full results for a specific history item
+  - `deleteHistoryItem(id)` - Delete a history item
 - Normalized error handling
 - Axios instance configuration
 
@@ -84,6 +90,8 @@ Centralized API client that provides:
 - URL query parameter support:
   - `/search?q=query` - Standard search (saves to history)
   - `/search?q=query&skipHistory=true` - Search without saving to history (used when navigating from history page)
+  - `/search?q=query&historyId=<id>&skipHistory=true` - Display pre-calculated results from history (fetches results via API call to `/api/history/{id}/results`)
+- When `historyId` is present, the page fetches the original search results from the backend instead of performing a new search
 
 ### History Page
 - Server-side pagination (10 items per page)
@@ -92,8 +100,12 @@ Centralized API client that provides:
   - Search query and timestamp
   - Top 3 result thumbnails with rounded corners (positioned on the right)
   - Delete button for individual items (far right)
-- Clicking a history item navigates to search page with that query and `skipHistory=true` parameter
-  - This prevents creating duplicate history entries when viewing past searches
+- Clicking a history item navigates to search page with:
+  - The original query: `q=<query>`
+  - The history ID: `historyId=<id>`
+  - Skip history flag: `skipHistory=true`
+  - The SearchPage then fetches the pre-calculated results via API call to `/api/history/{id}/results`
+  - This prevents creating duplicate history entries and shows the exact original results
 - Pagination controls (Previous/Next buttons)
 - Loading and error states
 - Empty state when no history exists
