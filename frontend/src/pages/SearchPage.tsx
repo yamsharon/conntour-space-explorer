@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { SearchResult, searchImages } from '../api/client';
+import { SearchResult, searchImages, getHistoryResults } from '../api/client';
 import { SourceCard } from '../components/Sources';
 
 type SearchBarProps = {
@@ -178,6 +178,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({ results }) => {
 const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlQuery = searchParams.get('q') || '';
+  const historyId = searchParams.get('historyId') || '';
   const skipHistory = searchParams.get('skipHistory') === 'true';
   
   const [query, setQuery] = useState(urlQuery);
@@ -208,18 +209,39 @@ const SearchPage: React.FC = () => {
     }
   }, [submittedQuery, query]);
 
+  // Fetch history results if historyId is present
   const {
-    data: results,
-    isLoading,
-    isError,
-    error,
+    data: historyResults,
+    isLoading: isLoadingHistory,
+    isError: isHistoryError,
+    error: historyError,
   } = useQuery<SearchResult[], Error>({
-    queryKey: ['search', submittedQuery, skipHistory],
-    queryFn: () => searchImages(submittedQuery, skipHistory),
-    enabled: submittedQuery.trim().length > 0,
+    queryKey: ['historyResults', historyId],
+    queryFn: () => getHistoryResults(historyId),
+    enabled: historyId.length > 0,
     staleTime: 30_000,
     retry: 2,
   });
+
+  // Fetch search results if no historyId
+  const {
+    data: apiResults,
+    isLoading: isLoadingSearch,
+    isError: isSearchError,
+    error: searchError,
+  } = useQuery<SearchResult[], Error>({
+    queryKey: ['search', submittedQuery, skipHistory],
+    queryFn: () => searchImages(submittedQuery, skipHistory),
+    enabled: submittedQuery.trim().length > 0 && historyId.length === 0,
+    staleTime: 30_000,
+    retry: 2,
+  });
+
+  // Use history results if available, otherwise use search results
+  const results = historyResults || apiResults;
+  const isLoading = isLoadingHistory || isLoadingSearch;
+  const isError = isHistoryError || isSearchError;
+  const error = historyError || searchError;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,6 +250,7 @@ const SearchPage: React.FC = () => {
       return;
     }
     setSubmittedQuery(trimmed);
+    // Clear historyId when submitting a new search
     setSearchParams({ q: trimmed });
   };
 
