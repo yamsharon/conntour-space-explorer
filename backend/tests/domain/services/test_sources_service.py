@@ -15,7 +15,8 @@ def test_sources_service_get_all_sources(dummy_db):
     result = svc.get_all_sources()
     assert isinstance(result, list)
     assert all(isinstance(r, Source) for r in result)
-    assert {r.id for r in result} == {1, 2}
+    # DummyDB now has 5 sources (updated for history tests)
+    assert {r.id for r in result} == {1, 2, 3, 4, 5}
     assert result[0].name == "Apollo 11"
     assert result[1].name == "Voyager 1"
 

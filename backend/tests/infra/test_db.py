@@ -115,11 +115,17 @@ def test_db_get_all_search_results_history():
 
 def test_db_add_search_result_history():
     db = SpaceDB(lm=DummyLM())
+    # Create history with IDs and confidence scores (new format)
+    results = tests_utils.generate_search_results(3)
+    results_data = [{"id": result.id, "confidence": result.confidence} for result in results]
     search_result_history = SearchResultHistory(query="test", time_searched="2020-01-01T00:00:00Z",
-                                                all_search_results=tests_utils.generate_search_results(3))
+                                                all_search_results=results_data)
     db.add_search_result_history(search_result_history)
     search_results_history = db.get_all_search_results_history()
     assert isinstance(search_results_history, list)
     assert len(search_results_history) == 1
     # Verify that id was auto-generated
-    assert search_result_history.id is not None
+    assert search_results_history[0].id is not None
+    # Verify structure: list of dicts with 'id' and 'confidence'
+    assert all(isinstance(result, dict) for result in search_results_history[0].all_search_results)
+    assert all("id" in result and "confidence" in result for result in search_results_history[0].all_search_results)

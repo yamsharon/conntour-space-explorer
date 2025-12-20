@@ -83,8 +83,6 @@ def test_calculate_similarity_for_one_source_returns_search_result(monkeypatch):
 
 
 def test_search_service_search_returns_normalized_results_sorted(mock_db, mock_lm, monkeypatch):
-    # Patch EMBEDDING_KEY used in search_service
-    monkeypatch.setattr(search_service, 'EMBEDDING_KEY', "embedding")
     # Patch calculate_image_and_text_similarity to make the results deterministic
     similarity_scores = [0.9, 0.1]
 
@@ -118,9 +116,12 @@ def test_search_service_search_adds_search_result_history(mock_db, mock_lm, monk
     svc = SearchService(db=mock_db, lm=mock_lm, history_service=hs)
     svc.search("moon mission", limit=2)
     assert len(mock_db.get_all_search_results_history()) == 1
-    assert mock_db.get_all_search_results_history()[0].query == "moon mission"
-    assert len(mock_db.get_all_search_results_history()[0].all_search_results) == 2
-    assert mock_db.get_all_search_results_history()[0].all_search_results[0].image_url in [
-        "http://image.com/apollo11.jpg", "http://image.com/voyager1.jpg"]
-    assert mock_db.get_all_search_results_history()[0].all_search_results[1].image_url in [
-        "http://image.com/apollo11.jpg", "http://image.com/voyager1.jpg"]
+    history_item = mock_db.get_all_search_results_history()[0]
+    assert history_item.query == "moon mission"
+    assert len(history_item.all_search_results) == 2
+    # all_search_results is now a list of dicts with 'id' and 'confidence'
+    assert history_item.all_search_results[0]["id"] in [1, 2]
+    assert history_item.all_search_results[1]["id"] in [1, 2]
+    # Verify confidence scores are stored
+    assert "confidence" in history_item.all_search_results[0]
+    assert "confidence" in history_item.all_search_results[1]

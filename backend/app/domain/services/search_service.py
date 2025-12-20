@@ -117,7 +117,7 @@ class SearchService:
 
         logger.debug(f"Found {len(all_sources)} sources")
         for source_dict in all_sources:
-            if source_dict[EMBEDDING_KEY] is None:
+            if EMBEDDING_KEY not in source_dict or source_dict[EMBEDDING_KEY] is None:
                 continue
             search_result = calculate_similarity_for_one_source(source_dict, text_vec)
             results.append(search_result)
