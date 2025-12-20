@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getHistory, deleteHistoryItem, SearchResultHistoryResponse, SearchResult } from '../api/client';
+import { getHistory, deleteHistoryItem, SearchResultHistoryResponse, SearchResult, HistoryResponse } from '../api/client';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -11,7 +11,7 @@ const ITEMS_PER_PAGE = 10;
 type HistoryRowProps = {
   item: SearchResultHistoryResponse;
   onDelete: (id: string) => void;
-  onClick: (query: string) => void;
+  onClick: (item: SearchResultHistoryResponse) => void;
 };
 
 /**
@@ -33,7 +33,7 @@ const HistoryRow: React.FC<HistoryRowProps> = ({ item, onDelete, onClick }) => {
     if ((e.target as HTMLElement).closest('button')) {
       return;
     }
-    onClick(item.query);
+    onClick(item);
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -169,7 +169,7 @@ const HistoryPage: React.FC = () => {
     data: historyResponse,
     isLoading,
     isError,
-  } = useQuery<{ items: SearchResultHistoryResponse[], total: number }>({
+  } = useQuery<HistoryResponse>({
     queryKey: ['history', currentPage],
     queryFn: () => {
       const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -198,8 +198,9 @@ const HistoryPage: React.FC = () => {
     }
   }, [currentPage, totalPages]);
 
-  const handleItemClick = (query: string) => {
-    navigate(`/search?q=${encodeURIComponent(query)}&skipHistory=true`);
+  const handleItemClick = (item: SearchResultHistoryResponse) => {
+    // Navigate with history ID - SearchPage will fetch the results
+    navigate(`/search?q=${encodeURIComponent(item.query)}&historyId=${item.id}&skipHistory=true`);
   };
 
   const handleDelete = (id: string) => {
