@@ -1,13 +1,14 @@
 """Main FastAPI application."""
 
-from app.api.dependencies import get_db, get_language_model, get_sources_service
+from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.dependencies import get_db, get_language_model
 from app.api.history_controller import HistoryController
 from app.api.search_controller import SearchController
 from app.api.sources_controller import SourcesController
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from app.utils.logger import logger
-from dotenv import load_dotenv
 
 load_dotenv(override=True)
 logger.info("Environment variables loaded")
@@ -33,21 +34,21 @@ app.add_middleware(
 async def startup_event():
     """Initialize infrastructure components on app startup."""
     logger.info("Initializing infrastructure components...")
-    
+
     # Initialize language model (will be cached by @lru_cache)
     logger.info("Initializing language model...")
     get_language_model()
     logger.info("Language model initialized")
-    
+
     # Initialize database (will be cached by @lru_cache)
     logger.info("Initializing database...")
     get_db()
     logger.info("Database initialized")
-    
+
     logger.info("All infrastructure components initialized")
 
 
-# Initialize controllers (dependencies are injected via FastAPI's Depends)
+# Initialize controllers (dependencies are injected via FastAPI Depends)
 sources_controller = SourcesController()
 app.include_router(sources_controller.router)
 search_controller = SearchController()
@@ -55,4 +56,3 @@ app.include_router(search_controller.router)
 history_controller = HistoryController()
 app.include_router(history_controller.router)
 logger.info("All controllers initialized")
-

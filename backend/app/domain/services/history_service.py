@@ -93,7 +93,7 @@ class HistoryService:
             time_searched=search_results_history.time_searched,
             top_three_images=top_three_results
         )
-    
+
     def _reconstruct_search_results(self, results_data: List[Dict[str, float]]) -> List[SearchResult]:
         """Reconstruct SearchResult objects from stored IDs and confidence scores.
         
@@ -106,24 +106,24 @@ class HistoryService:
         logger.debug(f"Reconstructing SearchResult objects from stored IDs and confidence scores: {results_data}")
         if not results_data:
             return []
-        
+
         # Get all source IDs we need
         source_ids = [int(result["id"]) for result in results_data]
-        
+
         # Get sources from database
         sources_dict = self.db.get_sources_by_ids(source_ids)
-        
+
         # Reconstruct SearchResult objects
         reconstructed_results = []
         logger.debug(f"Reconstructing {len(results_data)} SearchResult objects")
         for result_data in results_data:
             source_id = int(result_data["id"])
             confidence = result_data["confidence"]
-            
+
             if source_id not in sources_dict:
-                logger.warning(f"Source with ID {source_id} not found in database, skipping")
+                logger.warning(f"Source with ID {source_id} not in database, skipping")
                 continue
-            
+
             source_dict = sources_dict[source_id]
             source = Source(**source_dict)
             search_result = SearchResult(
@@ -137,7 +137,7 @@ class HistoryService:
                 confidence=confidence
             )
             reconstructed_results.append(search_result)
-        
+
         logger.debug(f"Reconstructed {len(reconstructed_results)} SearchResult objects")
         return reconstructed_results
 

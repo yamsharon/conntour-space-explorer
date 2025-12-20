@@ -38,7 +38,7 @@ def get_embedding_from_image_url(model: CLIPModel, processor: CLIPProcessor, ima
 
     # Store as a list, so it's JSON serializable later if needed
     embedding = image_features.numpy().flatten()
-    logger.info(f"Generated embedding for image {image_url} - {embedding.shape}")
+    logger.info(f"Generated embedding for image {image_url}")
     return embedding
 
 

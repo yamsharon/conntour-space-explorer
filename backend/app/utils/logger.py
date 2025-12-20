@@ -65,7 +65,7 @@ def setup_logger(
 
 def setup_file_handler(formatter: logging.Formatter, numeric_level: int) -> RotatingFileHandler:
     """
-    Setup a file handler for the logger.
+    Set up a file handler for the logger.
 
     Args:
         formatter: The formatter to use for the file handler.
@@ -88,9 +88,10 @@ def setup_file_handler(formatter: logging.Formatter, numeric_level: int) -> Rota
     file_handler.setFormatter(formatter)
     return file_handler
 
+
 def setup_console_handler(formatter: logging.Formatter, numeric_level: int) -> logging.StreamHandler:
     """
-    Setup a console handler for the logger.
+    Set up a console handler for the logger.
 
     Args:
         formatter: The formatter to use for the console handler.
@@ -103,6 +104,7 @@ def setup_console_handler(formatter: logging.Formatter, numeric_level: int) -> l
     console_handler.setLevel(numeric_level)
     console_handler.setFormatter(formatter)
     return console_handler
+
 
 # Create a default logger instance for easy import
 logger = setup_logger()
