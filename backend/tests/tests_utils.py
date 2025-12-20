@@ -62,6 +62,23 @@ class DummyDB:
         """Add a new search result history (for SearchService tests)."""
         self.search_results_history.append(search_result_history)
 
+    def get_search_result_history_by_id(self, history_id: str) -> SearchResultHistory:
+        """Get a search result history by ID (for HistoryService tests).
+        
+        Args:
+            history_id: The ID of the history item to retrieve.
+            
+        Returns:
+            The SearchResultHistory object if found.
+            
+        Raises:
+            ValueError: If the history item is not found.
+        """
+        for item in self.search_results_history:
+            if item.id == history_id:
+                return item
+        raise ValueError(f"History item with ID {history_id} not found")
+
     def delete_search_result_history(self, history_id: str) -> bool:
         """Delete a search result history by ID (for HistoryService tests).
         
