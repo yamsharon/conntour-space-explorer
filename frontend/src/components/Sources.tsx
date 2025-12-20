@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ImageSource, getImages } from '../api/client';
+import { ImageSource } from '../api/types';
+import { getImages } from '../api/sourcesClient';
 import { getConfidenceColor } from '../utils/styleUtils';
 
 type SourceCardProps = {

@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getHistory, deleteHistoryItem, SearchResultHistoryResponse, SearchResult, HistoryResponse } from '../api/client';
+import {
+  SearchResultHistoryResponse,
+  SearchResult,
+  HistoryResponse,
+} from '../api/types';
+import { getHistory, deleteHistoryItem } from '../api/historyClient';
 
 const ITEMS_PER_PAGE = 10;
 

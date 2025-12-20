@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { SearchResult, searchImages, getHistoryResults } from '../api/client';
+import { SearchResult } from '../api/types';
+import { searchImages } from '../api/searchClient';
+import { getHistoryResults } from '../api/historyClient';
 import { SourceCard } from '../components/Sources';
 
 type SearchBarProps = {
