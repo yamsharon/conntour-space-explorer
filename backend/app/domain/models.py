@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from pydantic import BaseModel, Field
 
@@ -21,11 +21,15 @@ class SearchResult(Source):
 
 
 class SearchResultHistory(BaseModel):
-    """Model representing a search history result (internal storage)."""
+    """Model representing a search history result (internal storage).
+    
+    Stores only IDs and confidence scores to save memory.
+    Full SearchResult objects are reconstructed when needed.
+    """
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     query: str
     time_searched: str
-    all_search_results: List[SearchResult]
+    all_search_results: List[Dict[str, float]]  # List of dicts with 'id' and 'confidence' keys
 
 
 class SearchResultHistoryResponse(BaseModel):
