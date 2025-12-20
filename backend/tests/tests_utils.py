@@ -2,7 +2,7 @@
 from typing import List
 
 from app.domain.models import SearchResultHistory, SearchResult
-from app.utils.constants import EMBEDDING_KEY
+from app.utils.constants import EMBEDDING_KEY, NORMALIZED_MEDIAN
 
 
 class DummyDB:
@@ -149,6 +149,7 @@ class DummyLM:
 
 def generate_search_results(count=1) -> List[SearchResult]:
     return [SearchResult(id=idx, name=f"image-{idx}", type="image", launch_date="2018-06-25T00:00:00Z",
-                         description=f"image-{idx}", image_url="http://image.url", status="Active", confidence=0.6) for
+                         description=f"image-{idx}", image_url="http://image.url", status="Active",
+                         confidence=NORMALIZED_MEDIAN) for
             idx in
             range(1, count + 1)]
