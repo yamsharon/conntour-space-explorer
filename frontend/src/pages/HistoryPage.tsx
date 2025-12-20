@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getHistory, deleteHistoryItem, SearchResultHistory } from '../api/client';
+import { getHistory, deleteHistoryItem, SearchResultHistoryResponse, SearchResult } from '../api/client';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -9,7 +9,7 @@ const ITEMS_PER_PAGE = 10;
  * Props for HistoryRow component.
  */
 type HistoryRowProps = {
-  item: SearchResultHistory;
+  item: SearchResultHistoryResponse;
   onDelete: (id: string) => void;
   onClick: (query: string) => void;
 };
@@ -54,7 +54,7 @@ const HistoryRow: React.FC<HistoryRowProps> = ({ item, onDelete, onClick }) => {
         
         {topThree.length > 0 && (
           <div className="flex gap-2 items-center">
-            {topThree.map((result) => (
+            {topThree.map((result: SearchResult) => (
               <div key={result.id} className="flex-shrink-0">
                 {result.image_url ? (
                   <img
@@ -169,7 +169,7 @@ const HistoryPage: React.FC = () => {
     data: historyResponse,
     isLoading,
     isError,
-  } = useQuery<{ items: SearchResultHistory[], total: number }>({
+  } = useQuery<{ items: SearchResultHistoryResponse[], total: number }>({
     queryKey: ['history', currentPage],
     queryFn: () => {
       const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;

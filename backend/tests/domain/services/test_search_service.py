@@ -119,8 +119,8 @@ def test_search_service_search_adds_search_result_history(mock_db, mock_lm, monk
     svc.search("moon mission", limit=2)
     assert len(mock_db.get_all_search_results_history()) == 1
     assert mock_db.get_all_search_results_history()[0].query == "moon mission"
-    assert len(mock_db.get_all_search_results_history()[0].top_three_images) == 2
-    assert mock_db.get_all_search_results_history()[0].top_three_images[0].image_url in [
+    assert len(mock_db.get_all_search_results_history()[0].all_search_results) == 2
+    assert mock_db.get_all_search_results_history()[0].all_search_results[0].image_url in [
         "http://image.com/apollo11.jpg", "http://image.com/voyager1.jpg"]
-    assert mock_db.get_all_search_results_history()[0].top_three_images[1].image_url in [
+    assert mock_db.get_all_search_results_history()[0].all_search_results[1].image_url in [
         "http://image.com/apollo11.jpg", "http://image.com/voyager1.jpg"]
