@@ -107,6 +107,15 @@ export async function deleteHistoryItem(id: string): Promise<void> {
   }
 }
 
+export async function getHistoryResults(historyId: string): Promise<SearchResult[]> {
+  try {
+    const response = await api.get<SearchResult[]>(`/api/history/${historyId}/results`);
+    return response.data;
+  } catch (error) {
+    throw normalizeError(error);
+  }
+}
+
 export { normalizeError, api as apiClient };
 
 
