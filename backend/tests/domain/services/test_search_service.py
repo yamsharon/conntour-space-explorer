@@ -11,6 +11,7 @@ from app.domain.services.search_service import (
     normalize_results,
     calculate_similarity_for_one_source,
 )
+from app.utils.constants import NORMALIZED_MINIMUM, NORMALIZED_MAXIMUM, NORMALIZED_MEDIAN
 from tests.tests_utils import DummyDB
 
 
@@ -41,7 +42,7 @@ def test_normalize_results_typical_case():
     ]
     norm = normalize_results(results)
     scores = [r.confidence for r in norm]
-    assert min(scores) >= 0.2 and max(scores) <= 1.0
+    assert min(scores) >= NORMALIZED_MINIMUM and max(scores) <= NORMALIZED_MAXIMUM
     assert norm[0].confidence < norm[1].confidence
 
 
@@ -54,7 +55,7 @@ def test_normalize_results_all_same_score():
     ]
     norm = normalize_results(results)
     for r in norm:
-        assert r.confidence == 0.6
+        assert r.confidence == NORMALIZED_MEDIAN
 
 
 def test_calculate_similarity_for_one_source_returns_search_result(monkeypatch):
@@ -97,9 +98,9 @@ def test_search_service_search_returns_normalized_results_sorted(mock_db, mock_l
     results = svc.search("moon mission", limit=2)
     assert isinstance(results, list)
     assert len(results) == 2
-    # Scores should be 90.0, 10.0, then normalized to [0.2, 1.0]
+    # Scores should be 90.0, 10.0, then normalized to [NORMALIZED_MINIMUM, NORMALIZED_MAXIMUM]
     assert results[0].confidence > results[1].confidence
-    assert all(0.2 <= r.confidence <= 1.0 for r in results)
+    assert all(NORMALIZED_MINIMUM <= r.confidence <= NORMALIZED_MAXIMUM for r in results)
     # Names should correspond to mock data
     assert results[0].name in ["Apollo 11", "Voyager 1"]
 
