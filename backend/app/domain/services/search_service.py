@@ -1,5 +1,5 @@
 """Search service for semantic image search using embeddings."""
-from typing import List, Dict
+from typing import List, Dict, Any
 
 import torch
 
@@ -12,7 +12,7 @@ from app.utils.embedding_utils import calculate_image_and_text_similarity
 from app.utils.logger import logger
 
 
-def normalize_results(results: List[SearchResult]):
+def normalize_results(results: List[SearchResult]) -> List[SearchResult]:
     """
     Normalize the confidence scores for a list of SearchResult objects.
 
@@ -48,13 +48,13 @@ def normalize_results(results: List[SearchResult]):
     return scaled_results
 
 
-def calculate_similarity_for_one_source(source_dict, text_vec):
+def calculate_similarity_for_one_source(source_dict: Dict[str, Any], text_vec: torch.Tensor) -> SearchResult:
     """
     Calculate similarity between an image and a text vector.
 
     Args:
-        source_dict (dict): The source dictionary.
-        text_vec (torch.Tensor): The text vector.
+        source_dict: The source dictionary.
+        text_vec: The text vector.
 
     Returns:
         SearchResult: The search result.

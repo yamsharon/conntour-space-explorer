@@ -63,13 +63,16 @@ def setup_logger(
     return new_logger
 
 
-def setup_file_handler(formatter, numeric_level):
+def setup_file_handler(formatter: logging.Formatter, numeric_level: int) -> RotatingFileHandler:
     """
     Setup a file handler for the logger.
 
     Args:
-        formatter (logging.Formatter): The formatter to use for the file handler.
-        numeric_level (int): The numeric log level to use for the file handler.
+        formatter: The formatter to use for the file handler.
+        numeric_level: The numeric log level to use for the file handler.
+
+    Returns:
+        Configured RotatingFileHandler instance.
     """
     log_file = os.getenv("LOG_FILE", DEFAULT_LOG_PATH)
     log_dir = os.path.dirname(log_file)
@@ -85,13 +88,16 @@ def setup_file_handler(formatter, numeric_level):
     file_handler.setFormatter(formatter)
     return file_handler
 
-def setup_console_handler(formatter, numeric_level):
+def setup_console_handler(formatter: logging.Formatter, numeric_level: int) -> logging.StreamHandler:
     """
     Setup a console handler for the logger.
 
     Args:
-        formatter (logging.Formatter): The formatter to use for the console handler.
-        numeric_level (int): The numeric log level to use for the console handler.
+        formatter: The formatter to use for the console handler.
+        numeric_level: The numeric log level to use for the console handler.
+
+    Returns:
+        Configured StreamHandler instance.
     """
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(numeric_level)
