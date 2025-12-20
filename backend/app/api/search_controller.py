@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from app.api.dependencies import get_search_service
 from app.domain.models import SearchResult
 from app.domain.services.search_service import SearchService
+from app.utils.constants import NORMALIZED_MINIMUM, NORMALIZED_MAXIMUM
 from app.utils.logger import logger
 
 
@@ -27,9 +28,9 @@ class SearchController:
                                       description="Skip saving to history (e.g., when navigating from history page)"),
             search_service: SearchService = Depends(get_search_service)
     ) -> List[SearchResult]:
-        """
+        f"""
         Search for NASA images using natural language queries.
-        Return results with confidence scores between 0.2 and 1.0.
+        Return results with confidence scores between {NORMALIZED_MINIMUM} and {NORMALIZED_MAXIMUM}.
 
         Args:
             q: Natural language search query (e.g., "images of Mars rovers", "solar flares")
@@ -38,7 +39,7 @@ class SearchController:
             search_service: Injected search service
 
         Returns:
-            List of SearchResult objects with confidence scores between 0.2 and 1.0
+            List of SearchResult objects with confidence scores {NORMALIZED_MINIMUM} and {NORMALIZED_MAXIMUM}
         """
         # Handle empty query - return empty list early
         if not q or not q.strip():
