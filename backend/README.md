@@ -77,8 +77,15 @@ The backend follows a 3-layer architecture:
   - `skipHistory`: If `true`, don't save this search to history (default: `false`). Useful when navigating from history page to prevent duplicate entries.
 - `GET /api/history?startIndex=<number>&limit=<number>` - Get paginated search history
   - `startIndex`: Starting index for pagination (default: 0)
-  - `limit`: Number of items to return (default: 10)
-- `DELETE /api/history/<history_id>` - Delete a specific history item by ID
+  - `limit`: Number of items to return (default: 10, max: 100)
+  - Returns: `HistoryResponse` with `items` (list of `SearchResultHistoryResponse`) and `total` count
+  - Each item includes: `id`, `query`, `time_searched`, and `top_three_images` (for display in history list)
+- `GET /api/history/{history_id}/results` - Get the full search results for a specific history item
+  - `history_id`: UUID of the history item
+  - Returns: List of `SearchResult` objects (the complete original search results)
+  - Used by the frontend to display the exact results from a past search without re-running the search
+- `DELETE /api/history/{history_id}` - Delete a specific history item by ID
+  - Returns: 204 No Content if successful, 404 if not found
 
 ## Environment Variables
 
@@ -125,4 +132,6 @@ See `app/api/dependencies.py` for dependency definitions.
 - Confidence scores are normalized to [0.2, 1.0] range for better UX
 - Search history is automatically saved unless `skipHistory=true` is specified
 - History items are sorted by most recent first
+- Full search results are stored with each history entry, allowing retrieval of exact original results via `/api/history/{id}/results`
+- The history list endpoint returns only `top_three_images` for efficiency; use the results endpoint to get all results
 
