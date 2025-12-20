@@ -9,7 +9,7 @@ class LanguageModel:
 
     MODEL_NAME = "openai/clip-vit-base-patch32"
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the LanguageModel."""
         logger.info("Initializing a language model with sentence-transformers")
         # Load the model and processor

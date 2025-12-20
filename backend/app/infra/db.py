@@ -2,8 +2,9 @@
 
 import json
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional, Any
 
+import numpy as np
 from tqdm import tqdm
 
 from app.domain.models import SearchResultHistory
@@ -53,15 +54,21 @@ class SpaceDB:
             f"{sum(1 for s in self._sources if 'embedding' in s)} with embeddings"
         )
 
-    def process_one_source(self, cached_embeddings, embeddings_to_cache, idx, item):
+    def process_one_source(
+        self, 
+        cached_embeddings: Optional[Dict[int, np.ndarray]], 
+        embeddings_to_cache: Dict[int, np.ndarray], 
+        idx: int, 
+        item: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Process one source and return a dictionary with the source data with the embedding.
 
         Args:
-            cached_embeddings (dict): The cached embeddings.
-            embeddings_to_cache (dict): The embeddings to cache.
-            idx (int): The index of the source.
-            item (dict): The source item.
+            cached_embeddings: The cached embeddings.
+            embeddings_to_cache: The embeddings to cache.
+            idx: The index of the source.
+            item: The source item.
 
         Returns:
             dict: The source data with the embedding.
@@ -124,12 +131,12 @@ class SpaceDB:
         logger.info(f"Found {len(sources_dict)} sources out of {len(source_ids)} requested")
         return sources_dict
 
-    def get_all_search_results_history(self):
+    def get_all_search_results_history(self) -> List[SearchResultHistory]:
         """Get all search history results."""
         logger.info("Getting all search history results")
         return self._search_results_history
 
-    def add_search_result_history(self, search_result_history: SearchResultHistory):
+    def add_search_result_history(self, search_result_history: SearchResultHistory) -> None:
         """Append a new search result history."""
         logger.info("Appending a new search result history")
         self._search_results_history.append(search_result_history)
