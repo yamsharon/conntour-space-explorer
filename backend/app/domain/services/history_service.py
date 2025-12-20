@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 from typing import List
 
-from app.domain.models import HistoryResponse, SearchResultHistory, SearchResult
+from app.domain.models import HistoryResponse, SearchResultHistory, SearchResult, SearchResultHistoryResponse
 from app.infra.db import SpaceDB
 from app.utils.logger import logger
 
@@ -31,15 +31,13 @@ class HistoryService:
             None
         """
         logger.info(f"Adding new search result history for query: '{query}'")
-        logger.debug(f"Final results: {final_results}")
-        top_three_results = final_results[:3]
         current_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        new_search_rsult_history: SearchResultHistory = SearchResultHistory(
+        new_search_result_history: SearchResultHistory = SearchResultHistory(
             query=query,
             time_searched=current_time,
-            top_three_images=top_three_results
+            all_search_results=final_results
         )
-        self.db.add_search_result_history(new_search_rsult_history)
+        self.db.add_search_result_history(new_search_result_history)
         logger.info(f"Added new search result history for query: '{query}'")
 
     def get_history(self, start_index: int = 0, limit: int = 10) -> HistoryResponse:
@@ -54,11 +52,13 @@ class HistoryService:
         """
         logger.info(f"Getting history: start_index={start_index}, limit={limit}")
         all_history = self.db.get_all_search_results_history()
+        all_history_responses = [HistoryService.create_search_results_history_response(search_results_history) for
+                                 search_results_history in all_history]
         total = len(all_history)
 
         # Sort by time_searched in descending order (most recent first)
         sorted_history = sorted(
-            all_history,
+            all_history_responses,
             key=lambda x: x.time_searched,
             reverse=True
         )
@@ -68,6 +68,15 @@ class HistoryService:
 
         logger.info(f"Returning {len(items)} history items (total: {total})")
         return HistoryResponse(items=items, total=total)
+
+    @staticmethod
+    def create_search_results_history_response(search_results_history: SearchResultHistory):
+        return SearchResultHistoryResponse(
+            id=search_results_history.id,
+            query=search_results_history.query,
+            time_searched=search_results_history.time_searched,
+            top_three_images=search_results_history.all_search_results[:3]
+        )
 
     def delete_history_item(self, history_id: str) -> bool:
         """Delete a history item by ID.

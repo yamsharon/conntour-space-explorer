@@ -69,7 +69,7 @@ export async function searchImages(query: string, skipHistory: boolean = false):
 }
 
 // History API - Backend models
-export interface SearchResultHistory {
+export interface SearchResultHistoryResponse {
   id: string;
   query: string;
   time_searched: string;
@@ -77,14 +77,14 @@ export interface SearchResultHistory {
 }
 
 export interface HistoryResponse {
-  items: SearchResultHistory[];
+  items: SearchResultHistoryResponse[];
   total: number;
 }
 
 export async function getHistory(
   startIndex: number = 0,
   limit: number = 10
-): Promise<{ items: SearchResultHistory[]; total: number }> {
+): Promise<{ items: SearchResultHistoryResponse[]; total: number }> {
   try {
     const response = await api.get<HistoryResponse>("/api/history", {
       params: { startIndex, limit },

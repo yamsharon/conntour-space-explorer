@@ -25,10 +25,18 @@ class SearchResultHistory(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     query: str
     time_searched: str
+    all_search_results: List[SearchResult]
+
+
+class SearchResultHistoryResponse(BaseModel):
+    """Model representing a search history result response (response to the frontend)."""
+    id: str
+    query: str
+    time_searched: str
     top_three_images: List[SearchResult]
 
 
 class HistoryResponse(BaseModel):
     """API model representing paginated history response."""
-    items: List[SearchResultHistory]
+    items: List[SearchResultHistoryResponse]
     total: int
