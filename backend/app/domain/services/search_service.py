@@ -7,19 +7,17 @@ from app.domain.models import SearchResult, Source
 from app.domain.services.history_service import HistoryService
 from app.infra.db import SpaceDB
 from app.infra.language_model import LanguageModel
-from app.utils.constants import EMBEDDING_KEY
+from app.utils.constants import EMBEDDING_KEY, NORMALIZED_MINIMUM, NORMALIZED_MAXIMUM, NORMALIZED_MEDIAN
 from app.utils.embedding_utils import calculate_image_and_text_similarity
 from app.utils.logger import logger
 
 
 def normalize_results(results: List[SearchResult]) -> List[SearchResult]:
-    """
+    f"""
     Normalize the confidence scores for a list of SearchResult objects.
 
-    This function rescales each score to a value between 0.2 and 1.0,
-    where the minimum confidence across all results maps to 0.2 and
-    the maximum confidence maps to 1.0. If all scores are identical,
-    all results will be assigned a confidence of 0.6.
+    This function rescales each score to a value between {NORMALIZED_MINIMUM} and {NORMALIZED_MAXIMUM}. 
+    If all scores are identical, all results will be assigned a confidence of {NORMALIZED_MEDIAN}.
 
     Args:
         results (List[SearchResult]): List of SearchResult objects with confidence attributes.
@@ -27,7 +25,7 @@ def normalize_results(results: List[SearchResult]) -> List[SearchResult]:
     Returns:
         List[SearchResult]: List of SearchResult objects with normalized confidence values.
     """
-    logger.info("Normalizing search results between 0.2 to 1.0")
+    logger.info(f"Normalizing search results between {NORMALIZED_MINIMUM} to {NORMALIZED_MAXIMUM}")
     confidence_values = [result.confidence for result in results]
     min_confidence = min(confidence_values)
     max_confidence = max(confidence_values)
@@ -37,13 +35,14 @@ def normalize_results(results: List[SearchResult]) -> List[SearchResult]:
 
     scaled_results = []
     for result in results:
-        if confidence_range == 0:  # If the confidence range is 0, we return a default confidence of 0.6
-            result.confidence = 0.6
+        if confidence_range == 0:  # If the confidence range is 0, we return a default confidence of {NORMALIZED_MEDIAN}
+            result.confidence = NORMALIZED_MEDIAN
         else:  # If the confidence range is not 0, we scale the confidence
             logger.debug(f"Scaling confidence for result: {result.name}")
             norm_confidence = result.confidence
             logger.debug(f"Normalized confidence: {norm_confidence}")
-            result.confidence = 0.2 + 0.8 * ((norm_confidence - min_confidence) / confidence_range)
+            result.confidence = NORMALIZED_MINIMUM + (NORMALIZED_MAXIMUM - NORMALIZED_MINIMUM) * (
+                        (norm_confidence - min_confidence) / confidence_range)
         scaled_results.append(result)
     return scaled_results
 
@@ -128,8 +127,9 @@ class SearchService:
         normalized_results.sort(key=lambda x: x.confidence, reverse=True)
         logger.info(f"Found {len(normalized_results)} results")
 
+        returned_results = normalized_results[:limit]
         # Only save to history if requested
         if save_to_history:
-            self.history_service.add_search_result_history(query, normalized_results)
+            self.history_service.add_search_result_history(query, returned_results)
 
-        return normalized_results[:limit]
+        return returned_results
