@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.domain.models import HistoryResponse, SearchResultHistory
+from app.domain.models import HistoryResponse, SearchResultHistory, SearchResult
 from app.domain.services.history_service import HistoryService
 from tests.tests_utils import DummyDB, generate_search_results
 
@@ -30,6 +30,9 @@ def test_add_search_result_history(history_service, mock_db):
     history_item = mock_db.search_results_history[0]
     assert history_item.query == query
     assert len(history_item.all_search_results) == 5
+    # Verify structure: list of dicts with 'id' and 'confidence'
+    assert all(isinstance(result, dict) for result in history_item.all_search_results)
+    assert all("id" in result and "confidence" in result for result in history_item.all_search_results)
     assert history_item.id is not None
     assert history_item.time_searched is not None
 
@@ -81,16 +84,20 @@ def test_get_history_sorted_by_most_recent(history_service, mock_db):
     """Test that history is sorted by most recent first."""
     # Add items with explicit timestamps to control order
 
-    # Create history items manually to control timestamps
+    # Create history items manually to control timestamps (using new format with IDs and confidence)
+    results1 = generate_search_results(2)
+    results_data1 = [{"id": result.id, "confidence": result.confidence} for result in results1]
     older_item = SearchResultHistory(
         query="older query",
         time_searched="2024-01-01T00:00:00Z",
-        all_search_results=generate_search_results(2)
+        all_search_results=results_data1
     )
+    results2 = generate_search_results(2)
+    results_data2 = [{"id": result.id, "confidence": result.confidence} for result in results2]
     newer_item = SearchResultHistory(
         query="newer query",
         time_searched="2024-01-02T00:00:00Z",
-        all_search_results=generate_search_results(2)
+        all_search_results=results_data2
     )
 
     mock_db.add_search_result_history(older_item)
@@ -166,22 +173,26 @@ def test_delete_history_item_multiple_items(history_service, mock_db):
     assert target_id not in remaining_ids
 
 
-def test_create_search_results_history_response():
-    """Test the static method that converts SearchResultHistory to SearchResultHistoryResponse."""
+def test_create_search_results_history_response(history_service, mock_db):
+    """Test the method that converts SearchResultHistory to SearchResultHistoryResponse."""
     results = generate_search_results(5)
+    # Store as IDs and confidence scores (new format)
+    results_data = [{"id": result.id, "confidence": result.confidence} for result in results]
     history = SearchResultHistory(
         id="test-id",
         query="test query",
         time_searched="2024-01-01T00:00:00Z",
-        all_search_results=results
+        all_search_results=results_data
     )
 
-    response = HistoryService.create_search_results_history_response(history)
+    response = history_service.create_search_results_history_response(history)
 
     assert response.id == "test-id"
     assert response.query == "test query"
     assert response.time_searched == "2024-01-01T00:00:00Z"
     assert len(response.top_three_images) == 3
+    # Verify that results were reconstructed (they should be SearchResult objects)
+    assert all(isinstance(img, SearchResult) for img in response.top_three_images)
     assert response.top_three_images[0].id == results[0].id
     assert response.top_three_images[1].id == results[1].id
     assert response.top_three_images[2].id == results[2].id
@@ -196,7 +207,10 @@ def test_get_history_results_success(history_service, mock_db):
     retrieved_results = history_service.get_history_results(history_id)
     
     assert len(retrieved_results) == 5
-    assert retrieved_results == results
+    # Verify that results were reconstructed as SearchResult objects
+    assert all(isinstance(result, SearchResult) for result in retrieved_results)
+    # Verify IDs match (confidence may differ due to normalization, so we check IDs)
+    assert [r.id for r in retrieved_results] == [r.id for r in results]
 
 
 def test_get_history_results_not_found(history_service):

@@ -34,6 +34,33 @@ class DummyDB:
                 "image_url": "http://image.com/voyager1.jpg",
                 "status": "Active",
             },
+            {
+                "id": 3,
+                "name": "Mars Rover",
+                "type": "Rover",
+                "launch_date": "2020-07-30",
+                "description": "Mars exploration rover",
+                "image_url": "http://image.com/marsrover.jpg",
+                "status": "Active",
+            },
+            {
+                "id": 4,
+                "name": "Hubble Telescope",
+                "type": "Telescope",
+                "launch_date": "1990-04-24",
+                "description": "Space telescope",
+                "image_url": "http://image.com/hubble.jpg",
+                "status": "Active",
+            },
+            {
+                "id": 5,
+                "name": "ISS",
+                "type": "Station",
+                "launch_date": "1998-11-20",
+                "description": "International Space Station",
+                "image_url": "http://image.com/iss.jpg",
+                "status": "Active",
+            },
         ]
 
         self.search_results_history = []
@@ -53,6 +80,23 @@ class DummyDB:
     def get_all_sources_with_embedding(self):
         """Get all sources with embeddings (for SearchService tests)."""
         return self.sources
+
+    def get_sources_by_ids(self, source_ids):
+        """Get sources by their IDs (without embeddings).
+        
+        Args:
+            source_ids: List of source IDs to retrieve.
+            
+        Returns:
+            Dictionary mapping source ID to source dict (without embeddings).
+        """
+        sources_dict = {}
+        for source in self.sources:
+            source_id = source.get("id")
+            if source_id in source_ids:
+                source_clean = {k: v for k, v in source.items() if k != EMBEDDING_KEY}
+                sources_dict[source_id] = source_clean
+        return sources_dict
 
     def get_all_search_results_history(self):
         """Get all search results history (for SearchService tests)."""
