@@ -185,3 +185,21 @@ def test_create_search_results_history_response():
     assert response.top_three_images[0].id == results[0].id
     assert response.top_three_images[1].id == results[1].id
     assert response.top_three_images[2].id == results[2].id
+
+
+def test_get_history_results_success(history_service, mock_db):
+    """Test successfully getting history results by ID."""
+    results = generate_search_results(5)
+    history_service.add_search_result_history("test query", results)
+    
+    history_id = mock_db.search_results_history[0].id
+    retrieved_results = history_service.get_history_results(history_id)
+    
+    assert len(retrieved_results) == 5
+    assert retrieved_results == results
+
+
+def test_get_history_results_not_found(history_service):
+    """Test getting history results for non-existent ID."""
+    with pytest.raises(ValueError, match="History item with ID.*not found"):
+        history_service.get_history_results("non-existent-id")

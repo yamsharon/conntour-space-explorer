@@ -78,6 +78,27 @@ class HistoryService:
             top_three_images=search_results_history.all_search_results[:3]
         )
 
+    def get_history_results(self, history_id: str) -> List[SearchResult]:
+        """Get the full search results for a specific history item.
+
+        Args:
+            history_id: The ID of the history item.
+
+        Returns:
+            List of SearchResult objects for the history item.
+
+        Raises:
+            ValueError: If the history item is not found.
+        """
+        logger.info(f"Getting history results for ID: {history_id}")
+        all_history = self.db.get_all_search_results_history()
+        for history_item in all_history:
+            if history_item.id == history_id:
+                logger.info(f"Found history item with {len(history_item.all_search_results)} results")
+                return history_item.all_search_results
+        logger.warning(f"History item with ID {history_id} not found")
+        raise ValueError(f"History item with ID {history_id} not found")
+
     def delete_history_item(self, history_id: str) -> bool:
         """Delete a history item by ID.
 

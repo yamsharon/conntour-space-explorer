@@ -1,10 +1,12 @@
 """Controller for handling history-related API endpoints."""
 
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import Response
 
 from app.api.dependencies import get_history_service
-from app.domain.models import HistoryResponse
+from app.domain.models import HistoryResponse, SearchResult
 from app.domain.services.history_service import HistoryService
 from app.utils.logger import logger
 
@@ -19,6 +21,7 @@ class HistoryController:
 
         # Register routes
         self.router.get("/history", response_model=HistoryResponse)(self.get_history)
+        self.router.get("/history/{history_id}/results", response_model=List[SearchResult])(self.get_history_results)
         self.router.delete("/history/{history_id}")(self.delete_history_item)
 
     @staticmethod
@@ -42,6 +45,35 @@ class HistoryController:
         response = history_service.get_history(start_index=startIndex, limit=limit)
         logger.info(f"Returning {len(response.items)} items (total: {response.total})")
         return response
+
+    @staticmethod
+    def get_history_results(
+            history_id: str,
+            history_service: HistoryService = Depends(get_history_service)
+    ) -> List[SearchResult]:
+        """
+        Get the full search results for a specific history item.
+
+        Args:
+            history_id: UUID of the history item
+            history_service: Injected history service
+
+        Returns:
+            List of SearchResult objects for the history item
+
+        Raises:
+            404: If the history item is not found
+        """
+        logger.info(f"Getting history results for ID: {history_id}")
+        try:
+            results = history_service.get_history_results(history_id)
+            logger.info(f"Returning {len(results)} results for history ID: {history_id}")
+            return results
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=str(e)
+            )
 
     @staticmethod
     def delete_history_item(
